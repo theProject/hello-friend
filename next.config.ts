@@ -1,7 +1,19 @@
-import type { NextConfig } from "next";
+import type { NextConfig } from 'next'
 
-const nextConfig: NextConfig = {
-  /* config options here */
-};
+const config: NextConfig = {
+  // Turbopack is now enabled by default in Next.js 15 development
+  // No need for experimental flag anymore
+  webpack: (config, { isServer }) => {
+    if (!isServer) {
+      config.resolve.fallback = {
+        fs: false,
+        net: false,
+        tls: false,
+        'pdf-parse': false
+      }
+    }
+    return config
+  }
+}
 
-export default nextConfig;
+export default config
