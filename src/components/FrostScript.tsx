@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
-import { Mic, Sun, Moon, Upload, Send, Loader, StopCircle } from 'lucide-react';
+import { Mic, Sun, Moon, Upload, Send, Loader, Snowflake } from 'lucide-react';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
+import VoiceInterface from './VoiceInterface';
 
 interface Message {
   content: string;
@@ -26,6 +27,7 @@ export default function FrostScript() {
   const [isDarkMode, setIsDarkMode] = useState(false);
   const [message, setMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [optimisticMessages, addOptimisticMessage] = useOptimistic<Message[], Message>(
@@ -33,8 +35,10 @@ export default function FrostScript() {
     (state, newMessage) => [...state, newMessage]
   );
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
+  const [showVoiceInterface, setShowVoiceInterface] = useState(false);
+  const [speechSynthesizer, setSpeechSynthesizer] = useState<sdk.SpeechSynthesizer | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
-  
+
   const getNeumorphicStyle = (isPressed = false) => ({
     backgroundColor: isDarkMode ? '#1a1a1a' : '#e0e5ec',
     borderRadius: '16px',
@@ -58,21 +62,128 @@ export default function FrostScript() {
       
       const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
       speechConfig.speechRecognitionLanguage = 'en-US';
+      speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
       
-      const audioConfig = sdk.AudioConfig.fromDefaultMicrophoneInput();
-      const recognizer = new sdk.SpeechRecognizer(speechConfig, audioConfig);
+      const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
+      const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
+      setSpeechSynthesizer(synthesizer);
+      
+      const recognizer = new sdk.SpeechRecognizer(speechConfig);
       
       setIsListening(true);
+      setShowVoiceInterface(true);
       
-      recognizer.recognizeOnceAsync((result) => {
+      recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
-          setMessage((prev: string) => prev + ' ' + result.text);
+          setMessage(result.text);
+          await handleVoiceMessage(result.text, synthesizer);
         }
         setIsListening(false);
+        recognizer.close();
       });
     } catch (err) {
       console.error(err);
       setIsListening(false);
+    }
+  }
+
+  async function handleVoiceMessage(text: string, synthesizer: sdk.SpeechSynthesizer) {
+    if (!text.trim()) return;
+    
+    const newMessage: Message = {
+      id: crypto.randomUUID(),
+      content: text,
+      role: 'user',
+      timestamp: new Date().toISOString()
+    };
+    
+    startTransition(() => {
+      addOptimisticMessage(newMessage);
+    });
+    
+    setMessage('');
+    setIsLoading(true);
+    
+    try {
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: text })
+      });
+      
+      const data = await response.json();
+      
+      const assistantMessage: Message = {
+        id: crypto.randomUUID(),
+        content: data.response,
+        role: 'assistant',
+        timestamp: new Date().toISOString()
+      };
+
+      setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+      
+      setIsSpeaking(true);
+      
+      await new Promise((resolve, reject) => {
+        synthesizer.speakTextAsync(
+          data.response,
+          result => {
+            if (result.errorDetails) {
+              console.error('Speech synthesis error:', result.errorDetails);
+              reject(result.errorDetails);
+            } else {
+              resolve(result);
+            }
+            setIsSpeaking(false);
+          },
+          error => {
+            console.error('Speech synthesis error:', error);
+            setIsSpeaking(false);
+            reject(error);
+          }
+        );
+      });
+
+      // Brief pause before starting to listen again
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Get fresh token for recognition
+      const tokenResponse = await fetch('/api/speech-token');
+      const { token, region } = await tokenResponse.json();
+      
+      const newSpeechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
+      newSpeechConfig.speechRecognitionLanguage = 'en-US';
+      const recognizer = new sdk.SpeechRecognizer(newSpeechConfig);
+      
+      setIsListening(true);
+      
+      const timeoutId = setTimeout(() => {
+        if (isListening) {
+          recognizer.close();
+          setIsListening(false);
+        }
+      }, 3000);
+
+      recognizer.recognizeOnceAsync(async (result) => {
+        clearTimeout(timeoutId);
+        if (result.text) {
+          setMessage(result.text);
+          await handleVoiceMessage(result.text, synthesizer);
+        } else {
+          setIsListening(false);
+        }
+        recognizer.close();
+      });
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      setMessages((prev: Message[]) => prev.filter(msg => msg.id !== newMessage.id));
+      setIsSpeaking(false);
+      setIsListening(false);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -125,7 +236,6 @@ export default function FrostScript() {
       timestamp: new Date().toISOString()
     };
     
-    // Wrap optimistic update in startTransition
     startTransition(() => {
       addOptimisticMessage(newMessage);
     });
@@ -154,7 +264,6 @@ export default function FrostScript() {
       setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
     } catch (error) {
       console.error('Error sending message:', error);
-      // Remove optimistic message if there's an error
       setMessages((prev: Message[]) => prev.filter(msg => msg.id !== newMessage.id));
     } finally {
       setIsLoading(false);
@@ -167,19 +276,34 @@ export default function FrostScript() {
     }
   }, [optimisticMessages]);
 
+  useEffect(() => {
+    return () => {
+      if (speechSynthesizer) {
+        speechSynthesizer.close();
+      }
+    };
+  }, [speechSynthesizer]);
+
   return (
     <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <div className="max-w-4xl mx-auto" style={getNeumorphicStyle()}>
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold">FrostScript</h1>
-          <button
-            onClick={() => setIsDarkMode(!isDarkMode)}
-            className="p-2 rounded-full hover:bg-opacity-20 hover:bg-gray-500 transition-all"
-            aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
-          >
-            {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
-          </button>
-        </div>
+        {!showVoiceInterface && (
+          <div className="flex justify-between items-center mb-6">
+            <div className="flex items-center gap-2">
+              <Snowflake className="w-6 h-6 text-blue-600" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+                FrostScript
+              </h1>
+            </div>
+            <button
+              onClick={() => setIsDarkMode(!isDarkMode)}
+              className="p-2 rounded-full hover:bg-opacity-20 hover:bg-gray-500 transition-all"
+              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+            >
+              {isDarkMode ? <Sun className="w-6 h-6" /> : <Moon className="w-6 h-6" />}
+            </button>
+          </div>
+        )}
 
         <div 
           ref={chatContainerRef}
@@ -191,7 +315,7 @@ export default function FrostScript() {
               key={msg.id}
               className={`mb-4 p-3 rounded-lg ${
                 msg.role === 'user' 
-                  ? 'ml-auto max-w-md bg-blue-500 text-white' 
+                  ? 'ml-auto max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white' 
                   : 'mr-auto max-w-md bg-gray-200 text-gray-800'
               }`}
             >
@@ -200,7 +324,7 @@ export default function FrostScript() {
           ))}
           {isLoading && (
             <div className="flex justify-center">
-              <Loader className="w-6 h-6 animate-spin" />
+              <Loader className="w-6 h-6 animate-spin text-blue-600" />
             </div>
           )}
         </div>
@@ -208,17 +332,13 @@ export default function FrostScript() {
         <div className="flex gap-2 items-end" style={getNeumorphicStyle(true)}>
           <button 
             className={`p-2 rounded-full transition-all ${
-              isListening ? 'text-blue-500' : ''
+              isListening ? 'text-blue-600' : ''
             }`}
             onClick={handleSpeechToText}
             disabled={isListening}
-            aria-label={isListening ? "Stop listening" : "Start voice input"}
+            aria-label="Start voice input"
           >
-            {isListening ? (
-              <StopCircle className="w-6 h-6" />
-            ) : (
-              <Mic className="w-6 h-6" />
-            )}
+            <Mic className="w-6 h-6" />
           </button>
           
           <label className="p-2 rounded-full cursor-pointer" htmlFor="file-upload">
@@ -272,6 +392,23 @@ export default function FrostScript() {
           </div>
         )}
       </div>
+
+      {showVoiceInterface && (
+        <VoiceInterface 
+          isListening={isListening}
+          isSpeaking={isSpeaking}
+          isDarkMode={isDarkMode}
+          onClose={() => {
+            setShowVoiceInterface(false);
+            setIsListening(false);
+            setIsSpeaking(false);
+          }}
+          onStart={handleSpeechToText}
+          onStop={() => {
+            setIsListening(false);
+          }}
+        />
+      )}
     </div>
   );
 }

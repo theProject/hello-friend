@@ -1,7 +1,23 @@
+// src/app/api/chat/route.ts
 import { NextResponse } from 'next/server';
 import { storeMemory, searchMemories, getRecentConversation } from '@/utils/memory-util';
 
-async function getAzureOpenAIResponse(messages: any[]) {
+interface Message {
+  role: 'system' | 'user' | 'assistant' | 'message';
+  content: string;
+}
+
+interface Memory {
+  content: string;
+  timestamp: Date;
+  type: string;
+  metadata?: {
+    type: string;
+    created_at: Date;
+  };
+}
+
+async function getAzureOpenAIResponse(messages: Message[]) {
   const response = await fetch(
     `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}/chat/completions?api-version=2024-02-15-preview`,
     {
@@ -46,20 +62,20 @@ export async function POST(request: Request) {
     // Prepare conversation context
     const conversationHistory = recentConversation
       .reverse()
-      .map(msg => ({
-        role: msg.type === 'message' ? 'user' : 'assistant',
+      .map((msg: Message) => ({
+        role: msg.role === 'message' ? 'user' : 'assistant',
         content: msg.content
       }));
 
     // Add relevant memories as context
     const memoryContext = relevantMemories.length > 0 
       ? "Related memories:\n" + relevantMemories
-          .map(mem => `- ${mem.content} (${new Date(mem.timestamp).toLocaleDateString()})`)
+          .map((mem: Memory) => `- ${mem.content} (${new Date(mem.timestamp).toLocaleDateString()})`)
           .join('\n')
       : "";
 
     // System message to define assistant's behavior
-    const systemMessage = {
+    const systemMessage: Message = {
       role: "system",
       content: `You are a highly intelligent personal assistant with perfect memory recall. 
                 You have access to the following relevant memories from past conversations:
