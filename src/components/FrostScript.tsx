@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect, useOptimistic, useState } from 'react';
+import { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
 import { Mic, Sun, Moon, Upload, Send, Loader, StopCircle } from 'lucide-react';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 
@@ -125,7 +125,11 @@ export default function FrostScript() {
       timestamp: new Date().toISOString()
     };
     
-    addOptimisticMessage(newMessage);
+    // Wrap optimistic update in startTransition
+    startTransition(() => {
+      addOptimisticMessage(newMessage);
+    });
+    
     setMessage('');
     setIsLoading(true);
     

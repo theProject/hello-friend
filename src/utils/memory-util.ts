@@ -1,3 +1,4 @@
+// src/utils/memory-util.ts
 import clientPromise from './mongodb';
 
 async function getEmbedding(text: string) {
@@ -23,25 +24,40 @@ async function getEmbedding(text: string) {
   return data.data[0].embedding;
 }
 
-export async function storeMemory(content: string, type: string = 'memory') {
+export async function storeMemory(content: string, type: string = 'message') {
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DATABASE_NAME);
   const collection = db.collection(process.env.MONGODB_COLLECTION_NAME!);
 
-  // Get vector embedding for the content
-  const embedding = await getEmbedding(content);
+  try {
+    // Get vector embedding for the content
+    const embedding = await getEmbedding(content);
 
-  // Store the memory with its embedding
-  await collection.insertOne({
-    type,
-    content,
-    embedding,
-    timestamp: new Date(),
-    metadata: {
+    // Store the memory with its embedding
+    await collection.insertOne({
       type,
-      created_at: new Date()
-    }
-  });
+      content,
+      embedding,
+      timestamp: new Date(),
+      metadata: {
+        type,
+        created_at: new Date()
+      }
+    });
+  } catch (error) {
+    console.error('Error storing memory:', error);
+    // Store the memory without embedding if there's an error
+    await collection.insertOne({
+      type,
+      content,
+      timestamp: new Date(),
+      metadata: {
+        type,
+        created_at: new Date(),
+        error: 'Failed to generate embedding'
+      }
+    });
+  }
 }
 
 export async function searchMemories(query: string, limit: number = 5) {
@@ -49,32 +65,45 @@ export async function searchMemories(query: string, limit: number = 5) {
   const db = client.db(process.env.MONGODB_DATABASE_NAME);
   const collection = db.collection(process.env.MONGODB_COLLECTION_NAME!);
 
-  // Get vector embedding for the query
-  const queryEmbedding = await getEmbedding(query);
+  try {
+    // Get vector embedding for the query
+    const queryEmbedding = await getEmbedding(query);
 
-  // Perform vector similarity search
-  const memories = await collection.aggregate([
-    {
-      "$vectorSearch": {
-        "index": "vector_index",
-        "path": "embedding",
-        "queryVector": queryEmbedding,
-        "numCandidates": 100,
-        "limit": limit
+    // Perform vector similarity search
+    const memories = await collection.aggregate([
+      {
+        "$search": {
+          "cosmosSearch": {
+            "vector": queryEmbedding,
+            "path": "embedding",
+            "k": limit
+          }
+        }
+      },
+      {
+        "$project": {
+          "content": 1,
+          "timestamp": 1,
+          "type": 1,
+          "metadata": 1,
+          "score": { "$meta": "searchScore" }
+        }
       }
-    },
-    {
-      "$project": {
-        "content": 1,
-        "timestamp": 1,
-        "type": 1,
-        "metadata": 1,
-        "score": { "$meta": "vectorSearchScore" }
-      }
-    }
-  ]).toArray();
+    ]).toArray();
 
-  return memories;
+    return memories;
+  } catch (error) {
+    console.error('Error searching memories:', error);
+    // Fallback to text search if vector search fails
+    const memories = await collection
+      .find({
+        $text: { $search: query }
+      })
+      .limit(limit)
+      .toArray();
+
+    return memories;
+  }
 }
 
 export async function getRecentConversation(limit: number = 10) {
@@ -83,7 +112,7 @@ export async function getRecentConversation(limit: number = 10) {
   const collection = db.collection(process.env.MONGODB_COLLECTION_NAME!);
 
   return await collection
-    .find({ type: 'message' })
+    .find({ type: "message" })
     .sort({ timestamp: -1 })
     .limit(limit)
     .toArray();
