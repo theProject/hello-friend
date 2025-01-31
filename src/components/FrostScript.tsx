@@ -1,9 +1,10 @@
 'use client';
 
 import { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
-import { Mic, Sun, Moon, Upload, Send, Loader, Snowflake } from 'lucide-react';
+import { Mic, Sun, Moon, Upload, Send, Loader, Snowflake, X } from 'lucide-react';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import VoiceInterface from './VoiceInterface';
+import FormattedMessage from './FormattedMessage';
 
 interface Message {
   content: string;
@@ -38,6 +39,10 @@ export default function FrostScript() {
   const [showVoiceInterface, setShowVoiceInterface] = useState(false);
   const [speechSynthesizer, setSpeechSynthesizer] = useState<sdk.SpeechSynthesizer | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const getNeumorphicStyle = `
+    ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}
+  `;
 
   async function handleSpeechToText() {
     if (isListening) return;
@@ -272,7 +277,7 @@ export default function FrostScript() {
 
   return (
     <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      <div className={`neumorphic-container ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`}>
+      <div className={`max-w-4xl mx-auto ${getNeumorphicStyle}`}>
         {!showVoiceInterface && (
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
@@ -293,19 +298,14 @@ export default function FrostScript() {
 
         <div 
           ref={chatContainerRef}
-          className={`neumorphic-chat-container ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`}
+          className={`mb-4 h-96 overflow-y-auto p-4 ${getNeumorphicStyle}`}
         >
           {optimisticMessages.map((msg) => (
-            <div
+            <FormattedMessage
               key={msg.id}
-              className={`mb-4 p-3 rounded-lg ${
-                msg.role === 'user' 
-                  ? 'ml-auto max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white' 
-                  : 'mr-auto max-w-md bg-gray-200 text-gray-800'
-              }`}
-            >
-              {msg.content}
-            </div>
+              content={msg.content}
+              isUser={msg.role === 'user'}
+            />
           ))}
           {isLoading && (
             <div className="flex justify-center">
@@ -314,7 +314,7 @@ export default function FrostScript() {
           )}
         </div>
 
-        <div className={`neumorphic-input-container ${isDarkMode ? 'neumorphic-dark-inset' : 'neumorphic-light-inset'}`}>
+        <div className={`flex gap-2 items-end ${getNeumorphicStyle}`}>
           <button 
             className={`p-2 rounded-full transition-all ${
               isListening ? 'text-blue-600' : ''
@@ -365,8 +365,19 @@ export default function FrostScript() {
         </div>
 
         {uploadedFiles.length > 0 && (
-          <div className={`neumorphic-uploaded-files ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`}>
-            <h2 className="text-lg font-semibold mb-2">Uploaded Files</h2>
+          <div className={`mt-4 ${getNeumorphicStyle} relative`}>
+            <div className="flex justify-between items-center mb-2">
+              <h2 className="text-lg font-semibold">Uploaded Files</h2>
+              <button
+                onClick={() => setUploadedFiles([])}
+                className={`p-2 rounded-full transition-all ${
+                  isDarkMode ? 'hover:bg-gray-800' : 'hover:bg-gray-200'
+                }`}
+                aria-label="Clear uploaded files"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
             <ul className="space-y-2">
               {uploadedFiles.map((file) => (
                 <li key={file.id} className="flex items-center gap-2">

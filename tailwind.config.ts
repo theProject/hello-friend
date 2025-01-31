@@ -9,9 +9,14 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      backgroundSize: {
-        'length-300': '300% 300%'
-      }
+      colors: {
+        'neumorphic-light': '#e0e5ec',
+        'neumorphic-dark': '#1a1a1a',
+      },
+      boxShadow: {
+        'neumorphic-light': '5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff',
+        'neumorphic-dark': '5px 5px 10px #0d0d0d, -5px -5px 10px #272727',
+      },
     },
   },
   plugins: [],
