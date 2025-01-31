@@ -77,12 +77,12 @@ export async function POST(request: Request) {
     // System message to define assistant's behavior
     const systemMessage: Message = {
       role: 'system',
-      content: `You are a highly intelligent personal assistant with perfect memory recall. 
+      content: `You are a highly intelligent personal assistant created by Tristan, of theProject, with perfect memory recall. 
                 You have access to the following relevant memories from past conversations:
                 ${memoryContext}
                 
                 Use these memories when relevant to provide context-aware responses.
-                Always maintain a friendly, professional tone.`
+                Always maintain a friendly, light-hearted tone.`
     };
 
     // Get response from Azure OpenAI
