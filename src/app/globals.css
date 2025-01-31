@@ -1,26 +1,46 @@
+/* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@keyframes gradientRotate {
-  0% {
-    background-position: 0% 50%;
+@layer components {
+  .neumorphic-light {
+    @apply bg-[#e0e5ec] shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] rounded-2xl p-5 transition-all duration-300;
   }
-  50% {
-    background-position: 100% 50%;
+
+  .neumorphic-light-inset {
+    @apply bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl p-5 transition-all duration-300;
   }
-  100% {
-    background-position: 0% 50%;
+
+  .neumorphic-dark {
+    @apply bg-[#1a1a1a] shadow-[5px_5px_10px_#0d0d0d,-5px_-5px_10px_#272727] rounded-2xl p-5 transition-all duration-300;
+  }
+
+  .neumorphic-dark-inset {
+    @apply bg-[#1a1a1a] shadow-[inset_5px_5px_10px_#0d0d0d,inset_-5px_-5px_10px_#272727] rounded-2xl p-5 transition-all duration-300;
+  }
+
+  .neumorphic-container {
+    @apply max-w-4xl mx-auto;
+  }
+
+  .neumorphic-chat-container {
+    @apply mb-4 h-96 overflow-y-auto p-4;
+  }
+
+  .neumorphic-input-container {
+    @apply flex gap-2 items-end;
+  }
+
+  .neumorphic-uploaded-files {
+    @apply mt-4;
   }
 }
 
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: .5;
-  }
+@keyframes gradientRotate {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
 }
 
 .animate-spin-slow {

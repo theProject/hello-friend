@@ -39,20 +39,6 @@ export default function FrostScript() {
   const [speechSynthesizer, setSpeechSynthesizer] = useState<sdk.SpeechSynthesizer | null>(null);
   const chatContainerRef = useRef<HTMLDivElement>(null);
 
-  const getNeumorphicStyle = (isPressed = false) => ({
-    backgroundColor: isDarkMode ? '#1a1a1a' : '#e0e5ec',
-    borderRadius: '16px',
-    padding: '20px',
-    boxShadow: isPressed
-      ? isDarkMode
-        ? 'inset 5px 5px 10px #0d0d0d, inset -5px -5px 10px #272727'
-        : 'inset 5px 5px 10px #a3b1c6, inset -5px -5px 10px #ffffff'
-      : isDarkMode
-      ? '5px 5px 10px #0d0d0d, -5px -5px 10px #272727'
-      : '5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff',
-    transition: 'all 0.3s ease',
-  });
-
   async function handleSpeechToText() {
     if (isListening) return;
     
@@ -286,7 +272,7 @@ export default function FrostScript() {
 
   return (
     <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      <div className="max-w-4xl mx-auto" style={getNeumorphicStyle()}>
+      <div className={`neumorphic-container ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`}>
         {!showVoiceInterface && (
           <div className="flex justify-between items-center mb-6">
             <div className="flex items-center gap-2">
@@ -307,8 +293,7 @@ export default function FrostScript() {
 
         <div 
           ref={chatContainerRef}
-          className="mb-4 h-96 overflow-y-auto p-4" 
-          style={getNeumorphicStyle()}
+          className={`neumorphic-chat-container ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`}
         >
           {optimisticMessages.map((msg) => (
             <div
@@ -329,7 +314,7 @@ export default function FrostScript() {
           )}
         </div>
 
-        <div className="flex gap-2 items-end" style={getNeumorphicStyle(true)}>
+        <div className={`neumorphic-input-container ${isDarkMode ? 'neumorphic-dark-inset' : 'neumorphic-light-inset'}`}>
           <button 
             className={`p-2 rounded-full transition-all ${
               isListening ? 'text-blue-600' : ''
@@ -380,7 +365,7 @@ export default function FrostScript() {
         </div>
 
         {uploadedFiles.length > 0 && (
-          <div className="mt-4" style={getNeumorphicStyle()}>
+          <div className={`neumorphic-uploaded-files ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`}>
             <h2 className="text-lg font-semibold mb-2">Uploaded Files</h2>
             <ul className="space-y-2">
               {uploadedFiles.map((file) => (
