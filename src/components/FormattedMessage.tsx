@@ -32,7 +32,7 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({ content, isUser }) 
       return (
         <div className="my-2">
           <pre className="rounded-lg bg-gray-800 p-4 overflow-x-auto">
-            <code className={`language-${language} text-gray-100`}>
+            <code className={`language-${language}`}>
               {String(children).replace(/\n$/, '')}
             </code>
           </pre>
