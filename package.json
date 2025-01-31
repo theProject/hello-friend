@@ -12,6 +12,7 @@
     "@azure/ai-form-recognizer": "^5.0.0",
     "@azure/cosmos": "^4.2.0",
     "@azure/storage-blob": "^12.26.0",
+    "@vercel/analytics": "^1.4.1",
     "autoprefixer": "^10.4.20",
     "date-fns": "^4.1.0",
     "dotenv": "^16.4.7",
