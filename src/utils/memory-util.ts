@@ -1,7 +1,20 @@
 // src/utils/memory-util.ts
-import clientPromise from './mongodb';
+import { clientPromise } from './mongodb';
 
-async function getEmbedding(text: string) {
+interface Memory {
+  type: string;
+  content: string;
+  embedding?: number[];
+  timestamp: Date;
+  metadata: {
+    type: string;
+    created_at: Date;
+    error?: string;
+  };
+  score?: number;
+}
+
+async function getEmbedding(text: string): Promise<number[]> {
   const response = await fetch(
     `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME}/embeddings?api-version=2024-02-15-preview`,
     {
@@ -24,16 +37,14 @@ async function getEmbedding(text: string) {
   return data.data[0].embedding;
 }
 
-export async function storeMemory(content: string, type: string = 'message') {
+export async function storeMemory(content: string, type: string = 'message'): Promise<void> {
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DATABASE_NAME);
-  const collection = db.collection(process.env.MONGODB_COLLECTION_NAME!);
+  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
 
   try {
-    // Get vector embedding for the content
     const embedding = await getEmbedding(content);
 
-    // Store the memory with its embedding
     await collection.insertOne({
       type,
       content,
@@ -46,7 +57,6 @@ export async function storeMemory(content: string, type: string = 'message') {
     });
   } catch (error) {
     console.error('Error storing memory:', error);
-    // Store the memory without embedding if there's an error
     await collection.insertOne({
       type,
       content,
@@ -60,17 +70,15 @@ export async function storeMemory(content: string, type: string = 'message') {
   }
 }
 
-export async function searchMemories(query: string, limit: number = 5) {
+export async function searchMemories(query: string, limit: number = 5): Promise<Memory[]> {
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DATABASE_NAME);
-  const collection = db.collection(process.env.MONGODB_COLLECTION_NAME!);
+  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
 
   try {
-    // Get vector embedding for the query
     const queryEmbedding = await getEmbedding(query);
 
-    // Perform vector similarity search
-    const memories = await collection.aggregate([
+    const memories: Memory[] = await collection.aggregate<Memory>([
       {
         "$search": {
           "cosmosSearch": {
@@ -82,6 +90,7 @@ export async function searchMemories(query: string, limit: number = 5) {
       },
       {
         "$project": {
+          "_id": 1,
           "content": 1,
           "timestamp": 1,
           "type": 1,
@@ -96,7 +105,7 @@ export async function searchMemories(query: string, limit: number = 5) {
     console.error('Error searching memories:', error);
     // Fallback to text search if vector search fails
     const memories = await collection
-      .find({
+      .find<Memory>({
         $text: { $search: query }
       })
       .limit(limit)
@@ -106,14 +115,16 @@ export async function searchMemories(query: string, limit: number = 5) {
   }
 }
 
-export async function getRecentConversation(limit: number = 10) {
+export async function getRecentConversation(limit: number = 10): Promise<Memory[]> {
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DATABASE_NAME);
-  const collection = db.collection(process.env.MONGODB_COLLECTION_NAME!);
+  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
 
-  return await collection
-    .find({ type: "message" })
+  const memories = await collection
+    .find<Memory>({ type: "message" })
     .sort({ timestamp: -1 })
     .limit(limit)
     .toArray();
+
+  return memories;
 }

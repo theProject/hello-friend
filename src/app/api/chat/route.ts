@@ -2,8 +2,10 @@
 import { NextResponse } from 'next/server';
 import { storeMemory, searchMemories, getRecentConversation } from '@/utils/memory-util';
 
+type MessageRole = 'system' | 'user' | 'assistant' | 'message';
+
 interface Message {
-  role: 'system' | 'user' | 'assistant' | 'message';
+  role: MessageRole;
   content: string;
 }
 
@@ -17,7 +19,7 @@ interface Memory {
   };
 }
 
-async function getAzureOpenAIResponse(messages: Message[]) {
+async function getAzureOpenAIResponse(messages: Message[]): Promise<string> {
   const response = await fetch(
     `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_DEPLOYMENT_NAME}/chat/completions?api-version=2024-02-15-preview`,
     {
@@ -27,7 +29,7 @@ async function getAzureOpenAIResponse(messages: Message[]) {
         'api-key': process.env.AZURE_OPENAI_API_KEY!,
       },
       body: JSON.stringify({
-        messages: messages,
+        messages,
         max_tokens: 2000,
         temperature: 0.7,
         frequency_penalty: 0,
@@ -59,13 +61,11 @@ export async function POST(request: Request) {
     // Get recent conversation context
     const recentConversation = await getRecentConversation(5);
 
-    // Prepare conversation context
-    const conversationHistory = recentConversation
-      .reverse()
-      .map((msg: Message) => ({
-        role: msg.role === 'message' ? 'user' : 'assistant',
-        content: msg.content
-      }));
+    // Prepare conversation context with proper type conversion
+    const conversationHistory: Message[] = recentConversation.map((msg) => ({
+      role: msg.type === 'message' ? 'user' : 'assistant',
+      content: msg.content
+    }));
 
     // Add relevant memories as context
     const memoryContext = relevantMemories.length > 0 
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
 
     // System message to define assistant's behavior
     const systemMessage: Message = {
-      role: "system",
+      role: 'system',
       content: `You are a highly intelligent personal assistant with perfect memory recall. 
                 You have access to the following relevant memories from past conversations:
                 ${memoryContext}
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
     const assistantResponse = await getAzureOpenAIResponse([
       systemMessage,
       ...conversationHistory,
-      { role: 'user', content: message }
+      { role: 'user' as const, content: message }
     ]);
 
     // Store assistant's response
