@@ -10,6 +10,7 @@ interface Memory {
     type: string;
     created_at: Date;
     error?: string;
+    fileName?: string;
   };
   score?: number;
 }
@@ -37,7 +38,7 @@ async function getEmbedding(text: string): Promise<number[]> {
   return data.data[0].embedding;
 }
 
-export async function storeMemory(content: string, type: string = 'message'): Promise<void> {
+export async function storeMemory(content: string, type: string = 'message', fileName?: string): Promise<void> {
   const client = await clientPromise;
   const db = client.db(process.env.MONGODB_DATABASE_NAME);
   const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
@@ -52,9 +53,14 @@ export async function storeMemory(content: string, type: string = 'message'): Pr
       timestamp: new Date(),
       metadata: {
         type,
-        created_at: new Date()
+        created_at: new Date(),
+        fileName
       }
     });
+
+    // Create text index for fallback searches
+    await collection.createIndex({ content: "text" });
+    
   } catch (error) {
     console.error('Error storing memory:', error);
     await collection.insertOne({
@@ -64,7 +70,8 @@ export async function storeMemory(content: string, type: string = 'message'): Pr
       metadata: {
         type,
         created_at: new Date(),
-        error: 'Failed to generate embedding'
+        error: 'Failed to generate embedding',
+        fileName
       }
     });
   }
@@ -78,6 +85,7 @@ export async function searchMemories(query: string, limit: number = 5): Promise<
   try {
     const queryEmbedding = await getEmbedding(query);
 
+    // First try vector search
     const memories: Memory[] = await collection.aggregate<Memory>([
       {
         "$search": {
@@ -100,18 +108,30 @@ export async function searchMemories(query: string, limit: number = 5): Promise<
       }
     ]).toArray();
 
+    // If no results from vector search, try text search
+    if (memories.length === 0) {
+      const textSearchResults = await collection
+        .find<Memory>({
+          $text: { $search: query }
+        })
+        .limit(limit)
+        .toArray();
+
+      return textSearchResults;
+    }
+
     return memories;
   } catch (error) {
     console.error('Error searching memories:', error);
-    // Fallback to text search if vector search fails
-    const memories = await collection
+    // Fallback to basic text search if both vector and text search fail
+    const fallbackResults = await collection
       .find<Memory>({
-        $text: { $search: query }
+        content: { $regex: query, $options: 'i' }
       })
       .limit(limit)
       .toArray();
 
-    return memories;
+    return fallbackResults;
   }
 }
 
@@ -127,4 +147,12 @@ export async function getRecentConversation(limit: number = 10): Promise<Memory[
     .toArray();
 
   return memories;
+}
+
+export async function clearMemories(): Promise<void> {
+  const client = await clientPromise;
+  const db = client.db(process.env.MONGODB_DATABASE_NAME);
+  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
+
+  await collection.deleteMany({});
 }

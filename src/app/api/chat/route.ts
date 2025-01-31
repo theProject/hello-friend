@@ -16,6 +16,7 @@ interface Memory {
   metadata?: {
     type: string;
     created_at: Date;
+    fileName?: string;
   };
 }
 
@@ -55,41 +56,63 @@ export async function POST(request: Request) {
     // Store the user message
     await storeMemory(message, 'message');
 
-    // Search for relevant memories
+    // Search for relevant memories AND documents
     const relevantMemories = await searchMemories(message, 5);
     
     // Get recent conversation context
     const recentConversation = await getRecentConversation(5);
 
-    // Prepare conversation context with proper type conversion
-    const conversationHistory: Message[] = recentConversation.map((msg) => ({
-      role: msg.type === 'message' ? 'user' : 'assistant',
-      content: msg.content
-    }));
+    // Prepare conversation context
+    const conversationHistory: Message[] = recentConversation
+      .reverse()
+      .map((msg) => ({
+        role: (msg.type === 'message' ? 'user' : 'assistant') as MessageRole,
+        content: msg.content
+      }));
 
-    // Add relevant memories as context
-    const memoryContext = relevantMemories.length > 0 
-      ? "Related memories:\n" + relevantMemories
+    // Separate documents from general memories for better context organization
+    const documents = relevantMemories.filter(mem => mem.type === 'document');
+    const memories = relevantMemories.filter(mem => mem.type === 'message');
+
+    // Create contextualized memory strings
+    const memoryContext = memories.length > 0 
+      ? "Related memories:\n" + memories
           .map((mem: Memory) => `- ${mem.content} (${new Date(mem.timestamp).toLocaleDateString()})`)
           .join('\n')
+      : "";
+
+    const documentContext = documents.length > 0
+      ? "\nRelevant documents:\n" + documents
+          .map((doc: Memory) => 
+            `Document: ${doc.metadata?.fileName || 'Unnamed'}\nContent: ${doc.content}`
+          )
+          .join('\n\n')
       : "";
 
     // System message to define assistant's behavior
     const systemMessage: Message = {
       role: 'system',
-      content: `You are a highly intelligent personal assistant created by Tristan, of theProject, with perfect memory recall. 
-                You have access to the following relevant memories from past conversations:
+      content: `You are a highly intelligent personal assistant with perfect memory recall. 
+                When referencing documents, always mention them by name and quote specific relevant passages.
+
+                Current Context:
                 ${memoryContext}
-                
-                Use these memories when relevant to provide context-aware responses.
-                Always maintain a friendly, light-hearted tone.`
+
+                Available Documents:
+                ${documentContext}
+
+                Instructions:
+                1. If asked about documents, refer to them by name and quote relevant parts
+                2. When answering questions, use specific information from the documents when available
+                3. If you can't find specific information in the documents, say so
+                4. Maintain a friendly, professional tone`
     };
 
     // Get response from Azure OpenAI
     const assistantResponse = await getAzureOpenAIResponse([
       systemMessage,
       ...conversationHistory,
-      { role: 'user' as const, content: message }
+      { role: 'user', content: message }
     ]);
 
     // Store assistant's response
