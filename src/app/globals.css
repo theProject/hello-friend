@@ -126,3 +126,20 @@ textarea::-webkit-scrollbar-thumb {
 .customObjectContain {
   object-fit: contain;
 }
+
+/* Add to your existing neumorphic styles in globals.css */
+.neumorphic-dark-raised {
+  @apply shadow-[5px_5px_10px_#0d0d0d,-5px_-5px_10px_#272727] transition-all duration-300;
+}
+
+.neumorphic-light-raised {
+  @apply shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] transition-all duration-300;
+}
+
+.neumorphic-dark-inset {
+  @apply shadow-[inset_5px_5px_10px_#0d0d0d,inset_-5px_-5px_10px_#272727] transition-all duration-300;
+}
+
+.neumorphic-light-inset {
+  @apply shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] transition-all duration-300;
+}

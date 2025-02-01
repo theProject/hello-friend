@@ -125,7 +125,7 @@ export default function FrostScript() {
       
       const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
       const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
-      setSpeechSynthesizer(synthesizer); // Now we're using setSpeechSynthesizer
+      setSpeechSynthesizer(synthesizer);
       
       const recognizer = new sdk.SpeechRecognizer(speechConfig);
       
@@ -135,7 +135,6 @@ export default function FrostScript() {
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           setMessage(result.text);
-          // Pass the synthesizer to handleVoiceMessage
           if (synthesizer) {
             await handleVoiceMessage(result.text, synthesizer);
           }
@@ -149,7 +148,6 @@ export default function FrostScript() {
     }
   }
 
-  // Rest of your existing handlers...
   async function handleVoiceMessage(text: string, synthesizer: sdk.SpeechSynthesizer) {
     if (!text.trim()) return;
     
@@ -232,10 +230,8 @@ export default function FrostScript() {
       // Listen for the next user input
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
-          // Continue conversation if we got text
           await handleVoiceMessage(result.text, synthesizer);
         } else {
-          // Only stop listening if no text was detected
           setIsListening(false);
         }
         recognizer.close();
@@ -352,101 +348,107 @@ export default function FrostScript() {
   return (
     <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <div className={`max-w-4xl mx-auto ${getNeumorphicStyle}`}>
-        {/* Top Bar */}
-        <div className="flex justify-between items-center mb-6 p-2">
-          {/* Logo and Title */}
-          <div className="flex items-center gap-2">
-            <Snowflake className="w-6 h-6 text-blue-600" />
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-teal-400 to-blue-500 bg-clip-text text-transparent">
-              FrostScript
-            </h1>
-          </div>
-
-          {/* Actions and Profile */}
-          <div className="flex items-center gap-4">
-            {/* File Upload */}
-            <label className="p-2 rounded-full cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition-all">
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                multiple
-                onChange={handleFileUpload}
-                accept=".pdf,.doc,.docx,.txt"
-                aria-label="Upload files"
-              />
-              <Upload className="w-5 h-5" />
-            </label>
-
-            {/* Photo Upload */}
-            <label className="p-2 rounded-full cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-800 transition-all">
-              <input
-                ref={photoInputRef}
-                type="file"
-                className="hidden"
-                onChange={handlePhotoUpload}
-                accept="image/*"
-                aria-label="Upload photo"
-              />
-              <ImageIcon className="w-5 h-5" />
-            </label>
-
-            {/* Theme Toggle */}
-            <button
-              onClick={() => setIsDarkMode(!isDarkMode)}
-              className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-all"
-              aria-label={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}
+        {/* Top Section */}
+        <div className="relative mb-8">
+          {/* Background panels */}
+          <div className={`absolute inset-0 top-2 ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} h-24 rounded-2xl`} />
+          <div className={`absolute inset-0 top-4 ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} h-20 rounded-2xl`} />
+          {/* Content Layer */}
+          <div className="relative pt-6 px-6 flex justify-between items-center">
+            {/* Logo Section */}
+            <div
+              className={`flex items-center gap-3 p-3 rounded-xl ${
+                isDarkMode ? 'neumorphic-dark-raised bg-gray-800' : 'neumorphic-light-raised bg-gray-50'
+              }`}
             >
-              {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-            </button>
-
-            {/* Profile Menu */}
-            <div className="relative">
-            <button
-  className="flex items-center gap-2"
-  aria-label="Profile menu"
->
-  {profile.imageUrl ? (
-    <div className="relative w-8 h-8">
-      <Image
-        src={profile.imageUrl}
-        alt={profile.name}
-        fill
-        sizes="32px"
-        className="rounded-full object-cover border-2 border-blue-600"
-        priority
-      />
-    </div>
-  ) : (
-    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
-      <User className="w-5 h-5 text-white" />
-    </div>
-  )}
-  <ChevronDown className="w-4 h-4" />
-</button>
-
-              {showProfileMenu && (
-                <div className="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50">
-                  <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                    <p className="text-sm font-semibold">{profile.name}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{profile.email}</p>
+              <Snowflake className="w-10 h-10 stroke-indigo-700 shadow-lg shadow-blue-500/50" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-teal-400 to-blue-500 bg-clip-text text-transparent">
+                FrostScript
+              </h1>
+            </div>
+            {/* Utility Icons */}
+            <div
+              className={`flex items-center gap-2 p-2 rounded-xl ${
+                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-100'
+              }`}
+            >
+              {/* File Upload */}
+              <label className="p-2 dark:hover:text-blue-500 transition-all">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={handleFileUpload}
+                  accept=".pdf,.doc,.docx,.txt"
+                  aria-label="Upload files"
+                />
+                <Upload className="w-5 h-5" />
+              </label>
+              {/* Photo Upload */}
+              <label className="p-2 dark:hover:text-blue-500 transition-all">
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                  accept="image/*"
+                  aria-label="Upload photo"
+                />
+                <ImageIcon className="w-5 h-5" />
+              </label>
+              {/* Theme Toggle */}
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className="p-2 dark:hover:text-blue-500 transition-all"
+                aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+              {/* Profile Menu */}
+              <div className="relative">
+                <button className="flex items-center gap-2" aria-label="Profile menu">
+                  {profile.imageUrl ? (
+                    <div className="relative w-8 h-8">
+                      <Image
+                        src={profile.imageUrl}
+                        alt={profile.name}
+                        fill
+                        sizes="32px"
+                        className="rounded-full object-cover border-2 border-blue-00"
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                  )}
+                  <ChevronDown className="w-1 h-1" />
+                </button>
+                {showProfileMenu && (
+                  <div className="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50">
+                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-semibold">{profile.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">{profile.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                        Profile Settings
+                      </button>
+                      <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                        Sign Out
+                      </button>
+                    </div>
                   </div>
-                  <div className="py-1">
-                    <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
-                      Profile Settings
-                    </button>
-                    <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                      Sign Out
-                    </button>
-                  </div>
-                </div>
-              )}
+                )}
+              </div>
             </div>
           </div>
         </div>
 
         {/* Chat Area */}
-        <div 
+        <div
           ref={chatContainerRef}
           className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 custom-scrollbar"
         >
@@ -457,7 +459,7 @@ export default function FrostScript() {
               isUser={msg.role === 'user'}
               imageUrl={msg.imageUrl}
               imageAlt={msg.imageAlt}
-              onImageClick={url => setSelectedImage({ url, alt: msg.imageAlt || 'Image' })}
+              onImageClick={(url) => setSelectedImage({ url, alt: msg.imageAlt || 'Image' })}
             />
           ))}
           {isLoading && (
@@ -475,9 +477,9 @@ export default function FrostScript() {
 
         {/* Input Area */}
         <div className={`flex gap-2 items-end p-4 ${getNeumorphicStyle}`}>
-          <button 
+          <button
             className={`p-2 rounded-full transition-all ${
-              isListening ? 'text-blue-600 bg-blue-100 dark:bg-blue-900' : 'hover:bg-gray-200 dark:hover:bg-gray-800'
+              isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-500' : 'hover:bg-gray-200 dark:hover:bg-gray-800'
             }`}
             onClick={handleSpeechToText}
             disabled={isListening}
@@ -485,7 +487,7 @@ export default function FrostScript() {
           >
             <Mic className="w-6 h-6" />
           </button>
-          
+
           <div className="flex-1 relative">
             <textarea
               value={message}
@@ -508,9 +510,9 @@ export default function FrostScript() {
               aria-label="Message input"
             />
           </div>
-          
-          <button 
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-all disabled:opacity-50"
+
+          <button
+            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-blue-800 transition-all disabled:opacity-50"
             onClick={() => {
               if (message.startsWith('/image ')) {
                 const prompt = message.slice(7);
@@ -562,7 +564,7 @@ export default function FrostScript() {
 
       {/* Voice Interface */}
       {showVoiceInterface && (
-        <VoiceInterface 
+        <VoiceInterface
           isListening={isListening}
           isSpeaking={isSpeaking}
           isDarkMode={isDarkMode}
