@@ -29,7 +29,7 @@
 }
 
 .animate-spin-slow {
-  animation: gradientRotate 3s linear infinite;
+  animation: gradientRotate 2s linear infinite;
 }
 
 .delay-75 {
