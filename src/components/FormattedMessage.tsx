@@ -2,10 +2,14 @@
 import React, { ReactNode } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import Image from 'next/image';
 
 interface FormattedMessageProps {
   content: string;
   isUser: boolean;
+  imageUrl?: string;
+  imageAlt?: string;
+  onImageClick?: (url: string) => void;
 }
 
 interface MarkdownComponentProps {
@@ -14,7 +18,13 @@ interface MarkdownComponentProps {
   ordered?: boolean;
 }
 
-const FormattedMessage: React.FC<FormattedMessageProps> = ({ content, isUser }) => {
+const FormattedMessage: React.FC<FormattedMessageProps> = ({
+  content,
+  isUser,
+  imageUrl,
+  imageAlt,
+  onImageClick,
+}) => {
   const components: Partial<Components> = {
     code({ className, children, ...props }: MarkdownComponentProps) {
       const match = /language-(\w+)/.exec(className || '');
@@ -64,7 +74,7 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({ content, isUser }) 
     },
     p: ({ children }: MarkdownComponentProps) => (
       <p className="mb-2">{children}</p>
-    )
+    ),
   };
 
   return (
@@ -75,12 +85,22 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({ content, isUser }) 
           : 'mr-auto max-w-lg bg-gray-200 text-gray-800'
       }`}
     >
-      <ReactMarkdown
-        remarkPlugins={[remarkGfm]}
-        components={components}
-      >
+      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
         {content}
       </ReactMarkdown>
+      {imageUrl && (
+        <div
+          className="relative mt-2 w-full h-64 rounded cursor-pointer"
+          onClick={() => onImageClick && onImageClick(imageUrl)}
+        >
+          <Image
+            src={imageUrl}
+            alt={imageAlt || 'Image'}
+            fill
+            style={{ objectFit: 'contain' }}
+          />
+        </div>
+      )}
     </div>
   );
 };

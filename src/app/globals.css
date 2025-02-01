@@ -95,3 +95,34 @@
   background-color: rgba(156, 163, 175, 0.5);
   border-radius: 3px;
 }
+
+textarea {
+  overflow: hidden;
+  resize: none;
+  min-height: 40px;
+  max-height: 200px;
+  transition: height 0.2s ease;
+}
+
+/* Improve scrollbar for textarea */
+textarea::-webkit-scrollbar {
+  width: 6px;
+}
+
+textarea::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+textarea::-webkit-scrollbar-thumb {
+  background-color: rgba(156, 163, 175, 0.5);
+  border-radius: 3px;
+}
+
+/* image modal in chat */
+.modalImageContainer {
+  height: 90vh;
+}
+
+.customObjectContain {
+  object-fit: contain;
+}
