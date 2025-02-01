@@ -112,7 +112,6 @@ export default function FrostScript() {
     }
   };
 
-  // Rest of your existing handlers...
   async function handleSpeechToText() {
     if (isListening) return;
     
@@ -126,7 +125,7 @@ export default function FrostScript() {
       
       const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
       const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
-      setSpeechSynthesizer(synthesizer);
+      setSpeechSynthesizer(synthesizer); // Now we're using setSpeechSynthesizer
       
       const recognizer = new sdk.SpeechRecognizer(speechConfig);
       
@@ -136,7 +135,10 @@ export default function FrostScript() {
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           setMessage(result.text);
-          await handleVoiceMessage(result.text, synthesizer);
+          // Pass the synthesizer to handleVoiceMessage
+          if (synthesizer) {
+            await handleVoiceMessage(result.text, synthesizer);
+          }
         }
         setIsListening(false);
         recognizer.close();
@@ -147,6 +149,7 @@ export default function FrostScript() {
     }
   }
 
+  // Rest of your existing handlers...
   async function handleVoiceMessage(text: string, synthesizer: sdk.SpeechSynthesizer) {
     if (!text.trim()) return;
     
@@ -165,6 +168,9 @@ export default function FrostScript() {
     setIsLoading(true);
     
     try {
+      // Keep the voice interface visible
+      setShowVoiceInterface(true);
+      
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: {
@@ -181,11 +187,14 @@ export default function FrostScript() {
         role: 'assistant',
         timestamp: new Date().toISOString()
       };
-
+  
       setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
       
+      // Set speaking state before starting speech
       setIsSpeaking(true);
+      setIsListening(false);
       
+      // Speak the response and wait for it to finish
       await new Promise((resolve, reject) => {
         synthesizer.speakTextAsync(
           data.response,
@@ -196,47 +205,44 @@ export default function FrostScript() {
             } else {
               resolve(result);
             }
-            setIsSpeaking(false);
           },
           error => {
             console.error('Speech synthesis error:', error);
-            setIsSpeaking(false);
             reject(error);
           }
         );
       });
-
-      await new Promise(resolve => setTimeout(resolve, 500));
+  
+      // After speaking finishes
+      setIsSpeaking(false);
       
+      // Brief pause before starting to listen again
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Start listening again
       const tokenResponse = await fetch('/api/speech-token');
-      const { token, region } = await tokenResponse.json();
+      const { token: newToken, region: newRegion } = await tokenResponse.json();
       
-      const newSpeechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
+      const newSpeechConfig = sdk.SpeechConfig.fromAuthorizationToken(newToken, newRegion);
       newSpeechConfig.speechRecognitionLanguage = 'en-US';
       const recognizer = new sdk.SpeechRecognizer(newSpeechConfig);
       
       setIsListening(true);
       
-      const timeoutId = setTimeout(() => {
-        if (isListening) {
-          recognizer.close();
-          setIsListening(false);
-        }
-      }, 3000);
-
+      // Listen for the next user input
       recognizer.recognizeOnceAsync(async (result) => {
-        clearTimeout(timeoutId);
         if (result.text) {
-          setMessage(result.text);
+          // Continue conversation if we got text
           await handleVoiceMessage(result.text, synthesizer);
         } else {
+          // Only stop listening if no text was detected
           setIsListening(false);
         }
         recognizer.close();
       });
-
+  
     } catch (error) {
-      console.error('Error sending message:', error);
+      console.error('Error in voice interaction:', error);
       setMessages((prev: Message[]) => prev.filter(msg => msg.id !== newMessage.id));
       setIsSpeaking(false);
       setIsListening(false);
