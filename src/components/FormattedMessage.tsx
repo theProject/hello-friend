@@ -3,6 +3,7 @@ import React, { ReactNode } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
+import CodeBlock from './CodeBlock'; // Custom code block using highlight.js
 
 interface FormattedMessageProps {
   content: string;
@@ -18,6 +19,13 @@ interface MarkdownComponentProps {
   ordered?: boolean;
 }
 
+// Extend the props for the code component to include "inline"
+interface CodeProps extends React.HTMLAttributes<HTMLElement> {
+  inline?: boolean;
+  className?: string;
+  children?: React.ReactNode;
+}
+
 const FormattedMessage: React.FC<FormattedMessageProps> = ({
   content,
   isUser,
@@ -26,28 +34,23 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
   onImageClick,
 }) => {
   const components: Partial<Components> = {
-    code({ className, children, ...props }: MarkdownComponentProps) {
-      const match = /language-(\w+)/.exec(className || '');
-      const language = match ? match[1] : '';
-      const isInline = !match;
-
-      if (isInline) {
+    // Render code blocks using our CodeBlock component
+    code({ inline, className, children, ...props }: CodeProps) {
+      if (inline) {
         return (
           <code className="px-1 py-0.5 rounded bg-gray-700 text-gray-100" {...props}>
             {children}
           </code>
         );
-      }
-
-      return (
-        <div className="my-2">
-          <pre className="rounded-lg bg-gray-800 p-4 text-gray-300 overflow-x-auto">
-            <code className={`language-${language}`}>
+      } else {
+        return (
+          <div className="my-2">
+            <CodeBlock className={className}>
               {String(children).replace(/\n$/, '')}
-            </code>
-          </pre>
-        </div>
-      );
+            </CodeBlock>
+          </div>
+        );
+      }
     },
     h1: ({ children }: MarkdownComponentProps) => (
       <h1 className="text-xl font-bold mb-2 mt-4">{children}</h1>
@@ -72,9 +75,20 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
         </ListWrapper>
       );
     },
-    p: ({ children }: MarkdownComponentProps) => (
-      <p className="mb-2">{children}</p>
-    ),
+    // Override paragraph rendering to avoid wrapping block elements in <p>
+    p: ({ children }: MarkdownComponentProps) => {
+      const childArray = React.Children.toArray(children);
+      // Check if there's a single child that's a block element (like <pre> or <div>)
+      if (
+        childArray.length === 1 &&
+        React.isValidElement(childArray[0]) &&
+        typeof childArray[0].type === 'string' &&
+        (childArray[0].type === 'pre' || childArray[0].type === 'div')
+      ) {
+        return <>{children}</>;
+      }
+      return <p className="mb-2">{children}</p>;
+    },
   };
 
   return (

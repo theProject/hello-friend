@@ -1,8 +1,9 @@
 'use client';
 
 import { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
-import { Mic, Sun, Moon, Upload, Send, Loader, Snowflake, Image as ImageIcon, User, Download, ChevronDown } from 'lucide-react';
+import { Mic, Sun, Moon, Upload, Send, Loader, Image as ImageIcon, User, Download, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
+import FrostscriptLogo from './FrostscriptLogo';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import VoiceInterface from './VoiceInterface';
 import FormattedMessage from './FormattedMessage';
@@ -10,6 +11,7 @@ import ImageModal from './ImageModal';
 import { imageCache } from '@/utils/imageCache';
 import { saveToDevice } from '@/utils/imageUtils';
 import type { Message, UploadedFile, FileResponse, ProfileInfo } from '@/types';
+
 
 export default function FrostScript() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -358,12 +360,12 @@ export default function FrostScript() {
             {/* Logo Section */}
             <div
               className={`flex items-center gap-3 p-3 rounded-xl ${
-                isDarkMode ? 'neumorphic-dark-raised bg-gray-800' : 'neumorphic-light-raised bg-gray-50'
+                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-50'
               }`}
             >
-              <Snowflake className="w-10 h-10 stroke-indigo-700 shadow-lg shadow-blue-500/50" />
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 via-teal-400 to-blue-500 bg-clip-text text-transparent">
-                FrostScript
+              <FrostscriptLogo />
+              <h1 className="text-2xl font-bold bg-gradient-to-tr from-blue-600 via-teal-400 to-blue-500 bg-clip-text text-transparent">
+               FrostScript
               </h1>
             </div>
             {/* Utility Icons */}
@@ -373,7 +375,7 @@ export default function FrostScript() {
               }`}
             >
               {/* File Upload */}
-              <label className="p-2 dark:hover:text-blue-500 transition-all">
+              <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
                 <input
                   ref={fileInputRef}
                   type="file"
@@ -386,7 +388,7 @@ export default function FrostScript() {
                 <Upload className="w-5 h-5" />
               </label>
               {/* Photo Upload */}
-              <label className="p-2 dark:hover:text-blue-500 transition-all">
+              <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
                 <input
                   ref={photoInputRef}
                   type="file"
@@ -400,7 +402,7 @@ export default function FrostScript() {
               {/* Theme Toggle */}
               <button
                 onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 dark:hover:text-blue-500 transition-all"
+                className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all"
                 aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -420,7 +422,7 @@ export default function FrostScript() {
                       />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
                       <User className="w-5 h-5 text-white" />
                     </div>
                   )}
@@ -479,7 +481,7 @@ export default function FrostScript() {
         <div className={`flex gap-2 items-end p-4 ${getNeumorphicStyle}`}>
           <button
             className={`p-2 rounded-full transition-all ${
-              isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-500' : 'hover:bg-gray-200 dark:hover:bg-gray-800'
+              isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-700' : 'hover:text-blue-500 dark:hover:text-teal-400'
             }`}
             onClick={handleSpeechToText}
             disabled={isListening}
@@ -510,9 +512,9 @@ export default function FrostScript() {
               aria-label="Message input"
             />
           </div>
-
+          
           <button
-            className="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-blue-800 transition-all disabled:opacity-50"
+            className="p-2 dark:hover:text-blue-500  hover:text-blue-500 transition-all disabled:opacity-50"
             onClick={() => {
               if (message.startsWith('/image ')) {
                 const prompt = message.slice(7);

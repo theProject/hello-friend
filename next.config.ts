@@ -1,8 +1,11 @@
-import type { NextConfig } from 'next'
+import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   images: {
-    domains: ['dalleproduse.blob.core.windows.net'],
+    domains: [
+      'dalleproduse.blob.core.windows.net',
+      'featherblob.blob.core.windows.net'
+    ],
   },
   webpack: (config, { isServer }) => {
     if (!isServer) {
@@ -11,10 +14,10 @@ const config: NextConfig = {
         net: false,
         tls: false,
         'pdf-parse': false,
-      }
+      };
     }
-    return config
+    return config;
   },
-}
+};
 
-export default config
+export default config;
