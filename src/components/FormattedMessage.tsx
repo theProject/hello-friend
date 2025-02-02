@@ -38,7 +38,7 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
     code({ inline, className, children, ...props }: CodeProps) {
       if (inline) {
         return (
-          <code className="px-1 py-0.5 rounded bg-gray-700 text-gray-100" {...props}>
+          <code className="px-2 py-2 rounded bg-gray-700 text-gray-100" {...props}>
             {children}
           </code>
         );
@@ -75,20 +75,10 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
         </ListWrapper>
       );
     },
-    // Override paragraph rendering to avoid wrapping block elements in <p>
-    p: ({ children }: MarkdownComponentProps) => {
-      const childArray = React.Children.toArray(children);
-      // Check if there's a single child that's a block element (like <pre> or <div>)
-      if (
-        childArray.length === 1 &&
-        React.isValidElement(childArray[0]) &&
-        typeof childArray[0].type === 'string' &&
-        (childArray[0].type === 'pre' || childArray[0].type === 'div')
-      ) {
-        return <>{children}</>;
-      }
-      return <p className="mb-2">{children}</p>;
-    },
+    // Replace paragraphs with a <div> to prevent block elements from nesting inside <p>
+    p: ({ children }: MarkdownComponentProps) => (
+      <div className="mb-2">{children}</div>
+    ),
   };
 
   return (

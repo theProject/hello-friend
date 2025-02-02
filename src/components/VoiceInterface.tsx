@@ -22,9 +22,9 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
   const status = isSpeaking ? 'Assistant Speaking...' : isListening ? 'Listening...' : 'Click to Speak';
   
   return (
-    <div className={`fixed inset-0 flex items-center justify-center ${isDarkMode ? 'bg-black/50' : 'bg-white/50'} backdrop-blur-sm transition-all duration-300`}>
+    <div className={`fixed inset-0 flex items-center justify-center ${isDarkMode ? 'bg-black/50' : 'bg-white/50'} backdrop-blur-3xl transition-all duration-300`}>
       {/* Outer panel with neumorphic effect */}
-      <div className={`p-16 rounded-3xl ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} relative`}>
+      <div className={`p-16 mx-auto max-w-4xl rounded-3xl ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} relative`}>
         {/* Close button - moved outside and up */}
         <button
           onClick={onClose}

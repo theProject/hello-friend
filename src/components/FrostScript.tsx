@@ -41,6 +41,7 @@ export default function FrostScript() {
   const photoInputRef = useRef<HTMLInputElement>(null);
 
   const getNeumorphicStyle = `${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`;
+  const [hasFocused, setHasFocused] = useState(false);
 
   // Image generation handler
   const handleImageGeneration = async (prompt: string) => {
@@ -350,28 +351,29 @@ export default function FrostScript() {
   return (
     <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
       <div className={`max-w-4xl mx-auto ${getNeumorphicStyle}`}>
-        {/* Top Section */}
+        {/* Header Section */}
         <div className="relative mb-8">
-          {/* Background panels */}
-          <div className={`absolute inset-0 top-2 ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} h-24 rounded-2xl`} />
+          {/* Raise the header panel */}
+        
           <div className={`absolute inset-0 top-4 ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} h-20 rounded-2xl`} />
           {/* Content Layer */}
-          <div className="relative pt-6 px-6 flex justify-between items-center">
+          <div className="relative pt-6 px-4 sm:px-6">
+          <div className="flex flex-nowrap justify-between items-center gap-4">
             {/* Logo Section */}
             <div
-              className={`flex items-center gap-3 p-3 rounded-xl ${
-                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-50'
+              className={`flex items-center gap-1 p-3 rounded-xl ${
+                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'
               }`}
             >
-              <FrostscriptLogo />
-              <h1 className="text-2xl font-bold bg-gradient-to-tr from-blue-600 via-teal-400 to-blue-500 bg-clip-text text-transparent">
+              <FrostscriptLogo  />
+              <h1 className="hidden md:block  text-2xl font-extrabold bg-gradient-to-tr from-teal-400 via-blue-400 to-blue-500 bg-clip-text text-transparent">
                FrostScript
               </h1>
             </div>
             {/* Utility Icons */}
             <div
               className={`flex items-center gap-2 p-2 rounded-xl ${
-                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-100'
+                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'
               }`}
             >
               {/* File Upload */}
@@ -448,7 +450,7 @@ export default function FrostScript() {
             </div>
           </div>
         </div>
-
+      </div>
         {/* Chat Area */}
         <div
           ref={chatContainerRef}
@@ -478,10 +480,10 @@ export default function FrostScript() {
         </div>
 
         {/* Input Area */}
-        <div className={`flex gap-2 items-end p-4 ${getNeumorphicStyle}`}>
+        <div className={`flex gap-2 items-end p-4 ${isDarkMode ? 'neumorphic-dark-inset' : 'neumorphic-light-inset'}`}>
           <button
             className={`p-2 rounded-full transition-all ${
-              isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-700' : 'hover:text-blue-500 dark:hover:text-teal-400'
+              isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-700' : 'hover:text-blue-500 dark:hover:text-blue-500'
             }`}
             onClick={handleSpeechToText}
             disabled={isListening}
@@ -491,28 +493,44 @@ export default function FrostScript() {
           </button>
 
           <div className="flex-1 relative">
-            <textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Type your message... Use /image to generate images"
-              className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto"
-              rows={1}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  if (message.startsWith('/image ')) {
-                    const prompt = message.slice(7);
-                    handleImageGeneration(prompt);
-                    setMessage('');
-                  } else {
-                    handleSendMessage();
-                  }
-                }
-              }}
-              aria-label="Message input"
-            />
-          </div>
-          
+
+  {/* Custom responsive placeholder overlay */}
+  {!hasFocused && message === '' && (
+    <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 text-blue-500">
+      <span className="block md:hidden text-sm">
+        Type<span className="font-mono text-teal-500"> /image</span> for creation | | Ask your friend anything!
+      </span>
+      <span className="hidden md:block">
+        Ask your friend anything here! Create an image? Type <span className="font-mono text-teal-500">/image</span> first to generate images
+      </span>
+    </div>
+  )}
+  <textarea
+    value={message}
+    onChange={(e) => setMessage(e.target.value)}
+    onFocus={() => setHasFocused(true)}
+    // Remove native placeholder since we're using an overlay
+    className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto"
+    rows={1}
+    onKeyDown={(e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        if (message.startsWith('/image ')) {
+          const prompt = message.slice(7);
+          handleImageGeneration(prompt);
+          setMessage('');
+        } else {
+          handleSendMessage();
+        }
+      }
+    }}
+    aria-label="Prompt Input"
+  />
+</div>
+
+
+      {/* Send Prompt Message Button */}
+
           <button
             className="p-2 dark:hover:text-blue-500  hover:text-blue-500 transition-all disabled:opacity-50"
             onClick={() => {

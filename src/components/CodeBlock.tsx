@@ -1,7 +1,7 @@
 // src/components/CodeBlock.tsx
 import React, { useEffect, useRef } from 'react';
 import hljs from 'highlight.js';
-import 'highlight.js/styles/tokyo-night-dark.css'; // or your preferred dark theme
+import 'highlight.js/styles/tokyo-night-dark.css'; // code blocks have lots of theme , github has the list for codeblocks
 
 interface CodeBlockProps {
   className?: string;

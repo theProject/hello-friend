@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 
 export default function FrostscriptLogo({
-  className = "w-9 h-9 flex items-center justify-center",
+  className = "w-8 h-8 flex items-center justify-center p-0",
 }) {
   return (
     <svg
