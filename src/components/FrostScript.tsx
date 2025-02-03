@@ -150,7 +150,7 @@ export default function FrostScript() {
       setIsListening(false);
     }
   }
-
+  
   async function handleVoiceMessage(text: string, synthesizer: sdk.SpeechSynthesizer) {
     if (!text.trim()) return;
     
@@ -213,14 +213,14 @@ export default function FrostScript() {
           }
         );
       });
-  
-      // After speaking finishes
+    
+      // After speaking finishes, update speaking state.
       setIsSpeaking(false);
       
-      // Brief pause before starting to listen again
-      await new Promise(resolve => setTimeout(resolve, 800));
+      // Wait a short delay (1 second) to allow for a smooth transition.
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Start listening again
+      // Immediately re-engage listening by fetching a new token and creating a new recognizer.
       const tokenResponse = await fetch('/api/speech-token');
       const { token: newToken, region: newRegion } = await tokenResponse.json();
       
@@ -230,7 +230,7 @@ export default function FrostScript() {
       
       setIsListening(true);
       
-      // Listen for the next user input
+      // Listen for the next user input. (Your silence-detection logic should stop the mic if there's 5 seconds of no speech.)
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           await handleVoiceMessage(result.text, synthesizer);
@@ -239,7 +239,7 @@ export default function FrostScript() {
         }
         recognizer.close();
       });
-  
+    
     } catch (error) {
       console.error('Error in voice interaction:', error);
       setMessages((prev: Message[]) => prev.filter(msg => msg.id !== newMessage.id));
@@ -249,7 +249,7 @@ export default function FrostScript() {
       setIsLoading(false);
     }
   }
-
+  
   async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
     if (!event.target.files?.length) return;
     
@@ -527,7 +527,6 @@ export default function FrostScript() {
     aria-label="Prompt Input"
   />
 </div>
-
 
       {/* Send Prompt Message Button */}
 
