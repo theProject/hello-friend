@@ -54,7 +54,7 @@ const VoiceInterface: React.FC<VoiceInterfaceProps> = ({
           <div className={`w-64 h-64 rounded-full relative ${(isListening || isSpeaking) ? 'animate-spin-slow' : ''}`}>
             {/* Outer gradient ring */}
             <div className="absolute inset-0 rounded-full overflow-hidden">
-              <div className="w-full h-full rounded-full bg-gradient-to-r from-teal-600 via-purple-600 to-blue-500 p-4 bg-[length:300%_300%]">
+              <div className="w-full h-full rounded-full bg-gradient-to-r from-teal-600 via-purple-600 to-blue-500 p-4 bg-[length:300%_300%] animate-spin-slow">
                 {/* Inner circle background */}
                 <div className={`w-full h-full rounded-full ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`} />
               </div>
