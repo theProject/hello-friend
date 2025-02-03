@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
 import { Mic, Sun, Moon, Upload, Send, Loader, Image as ImageIcon, User, Download, ChevronDown } from 'lucide-react';
 import Image from 'next/image';
@@ -11,7 +12,6 @@ import ImageModal from './ImageModal';
 import { imageCache } from '@/utils/imageCache';
 import { saveToDevice } from '@/utils/imageUtils';
 import type { Message, UploadedFile, FileResponse, ProfileInfo } from '@/types';
-
 
 export default function FrostScript() {
   const [isDarkMode, setIsDarkMode] = useState(false);
@@ -230,7 +230,7 @@ export default function FrostScript() {
       
       setIsListening(true);
       
-      // Listen for the next user input. (Your silence-detection logic should stop the mic if there's 5 seconds of no speech.)
+      // Listen for the next user input.
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           await handleVoiceMessage(result.text, synthesizer);
@@ -353,109 +353,99 @@ export default function FrostScript() {
       <div className={`max-w-4xl mx-auto ${getNeumorphicStyle}`}>
         {/* Header Section */}
         <div className="relative mb-8">
-          {/* Raise the header panel */}
-        
+          {/* Raised header panel */}
           <div className={`absolute inset-0 top-4 ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} h-20 rounded-2xl`} />
           {/* Content Layer */}
           <div className="relative pt-6 px-4 sm:px-6">
-          <div className="flex flex-nowrap justify-between items-center gap-4">
-            {/* Logo Section */}
-            <div
-              className={`flex items-center gap-1 p-3 rounded-xl ${
-                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'
-              }`}
-            >
-              <FrostscriptLogo  />
-              <h1 className="hidden md:block  text-2xl font-extrabold bg-gradient-to-tr from-teal-400 via-blue-400 to-blue-500 bg-clip-text text-transparent">
-               FrostScript
-              </h1>
-            </div>
-            {/* Utility Icons */}
-            <div
-              className={`flex items-center gap-2 p-2 rounded-xl ${
-                isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'
-              }`}
-            >
-              {/* File Upload */}
-              <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  multiple
-                  onChange={handleFileUpload}
-                  accept=".pdf,.doc,.docx,.txt"
-                  aria-label="Upload files"
-                />
-                <Upload className="w-5 h-5" />
-              </label>
-              {/* Photo Upload */}
-              <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={handlePhotoUpload}
-                  accept="image/*"
-                  aria-label="Upload photo"
-                />
-                <ImageIcon className="w-5 h-5" />
-              </label>
-              {/* Theme Toggle */}
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all"
-                aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            <div className="flex flex-nowrap justify-between items-center gap-4">
+              {/* Logo Section */}
+              <div
+                className={`flex items-center gap-1 p-3 rounded-xl ${isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'}`}
               >
-                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-              {/* Profile Menu */}
-              <div className="relative">
-                <button className="flex items-center gap-2" aria-label="Profile menu">
-                  {profile.imageUrl ? (
-                    <div className="relative w-8 h-8">
-                      <Image
-                        src={profile.imageUrl}
-                        alt={profile.name}
-                        fill
-                        sizes="32px"
-                        className="rounded-full object-cover border-2 border-blue-00"
-                        priority
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                      <User className="w-5 h-5 text-white" />
+                <FrostscriptLogo  />
+                <h1 className="hidden md:block text-2xl font-extrabold bg-gradient-to-tr from-teal-400 via-blue-400 to-blue-500 bg-clip-text text-transparent">
+                  FrostScript
+                </h1>
+              </div>
+              {/* Utility Icons */}
+              <div className={`flex items-center gap-2 p-2 rounded-xl ${isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'}`}>
+                {/* File Upload */}
+                <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    className="hidden"
+                    multiple
+                    onChange={handleFileUpload}
+                    accept=".pdf,.doc,.docx,.txt"
+                    aria-label="Upload files"
+                  />
+                  <Upload className="w-5 h-5" />
+                </label>
+                {/* Photo Upload */}
+                <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    className="hidden"
+                    onChange={handlePhotoUpload}
+                    accept="image/*"
+                    aria-label="Upload photo"
+                  />
+                  <ImageIcon className="w-5 h-5" />
+                </label>
+                {/* Theme Toggle */}
+                <button
+                  onClick={() => setIsDarkMode(!isDarkMode)}
+                  className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all"
+                  aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+                >
+                  {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                </button>
+                {/* Profile Menu */}
+                <div className="relative">
+                  <button className="flex items-center gap-2" aria-label="Profile menu">
+                    {profile.imageUrl ? (
+                      <div className="relative w-8 h-8">
+                        <Image
+                          src={profile.imageUrl}
+                          alt={profile.name}
+                          fill
+                          sizes="32px"
+                          className="rounded-full object-cover border-2 border-blue-00"
+                          priority
+                        />
+                      </div>
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
+                        <User className="w-5 h-5 text-white" />
+                      </div>
+                    )}
+                    <ChevronDown className="w-1 h-1" />
+                  </button>
+                  {showProfileMenu && (
+                    <div className="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50">
+                      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
+                        <p className="text-sm font-semibold">{profile.name}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{profile.email}</p>
+                      </div>
+                      <div className="py-1">
+                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
+                          Profile Settings
+                        </button>
+                        <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
+                          Sign Out
+                        </button>
+                      </div>
                     </div>
                   )}
-                  <ChevronDown className="w-1 h-1" />
-                </button>
-                {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50">
-                    <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                      <p className="text-sm font-semibold">{profile.name}</p>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{profile.email}</p>
-                    </div>
-                    <div className="py-1">
-                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
-                        Profile Settings
-                      </button>
-                      <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                )}
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
         {/* Chat Area */}
-        <div
-          ref={chatContainerRef}
-          className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 custom-scrollbar"
-        >
+        <div ref={chatContainerRef} className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 custom-scrollbar">
           {optimisticMessages.map((msg) => (
             <FormattedMessage
               key={msg.id}
@@ -482,9 +472,7 @@ export default function FrostScript() {
         {/* Input Area */}
         <div className={`flex gap-2 items-end p-4 ${isDarkMode ? 'neumorphic-dark-inset' : 'neumorphic-light-inset'}`}>
           <button
-            className={`p-2 rounded-full transition-all ${
-              isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-700' : 'hover:text-blue-500 dark:hover:text-blue-500'
-            }`}
+            className={`p-2 rounded-full transition-all ${isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-700' : 'hover:text-blue-500 dark:hover:text-blue-500'}`}
             onClick={handleSpeechToText}
             disabled={isListening}
             aria-label="Start voice input"
@@ -493,49 +481,58 @@ export default function FrostScript() {
           </button>
 
           <div className="flex-1 relative">
+            {/* Custom responsive placeholder overlay */}
+            {!hasFocused && message === '' && (
+              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 text-blue-500">
+                <span className="block md:hidden text-sm">
+                  Type<span className="font-mono text-teal-500"> /image</span> for creation | | Ask your friend anything!
+                </span>
+                <span className="hidden md:block">
+                  Ask your friend anything here! Create an image? Type <span className="font-mono text-teal-500">/image</span> first to generate images
+                </span>
+              </div>
+            )}
+            <textarea
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onFocus={() => setHasFocused(true)}
+              className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto"
+              rows={1}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  const trimmed = message.trim();
+                  // Check for the command "/image" (case-insensitive)
+                  if (trimmed.toLowerCase().startsWith('/image')) {
+                    // Remove the command part ("/image") and trim the remaining prompt
+                    const prompt = trimmed.slice(6).trim();
+                    if (prompt.length > 0) {
+                      handleImageGeneration(prompt);
+                    } else {
+                      console.warn('No prompt provided for image generation.');
+                    }
+                    setMessage('');
+                  } else {
+                    handleSendMessage();
+                  }
+                }
+              }}
+              aria-label="Prompt Input"
+            />
+          </div>
 
-  {/* Custom responsive placeholder overlay */}
-  {!hasFocused && message === '' && (
-    <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 text-blue-500">
-      <span className="block md:hidden text-sm">
-        Type<span className="font-mono text-teal-500"> /image</span> for creation | | Ask your friend anything!
-      </span>
-      <span className="hidden md:block">
-        Ask your friend anything here! Create an image? Type <span className="font-mono text-teal-500">/image</span> first to generate images
-      </span>
-    </div>
-  )}
-  <textarea
-    value={message}
-    onChange={(e) => setMessage(e.target.value)}
-    onFocus={() => setHasFocused(true)}
-    // Remove native placeholder since we're using an overlay
-    className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto"
-    rows={1}
-    onKeyDown={(e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        if (message.startsWith('/image ')) {
-          const prompt = message.slice(7);
-          handleImageGeneration(prompt);
-          setMessage('');
-        } else {
-          handleSendMessage();
-        }
-      }
-    }}
-    aria-label="Prompt Input"
-  />
-</div>
-
-      {/* Send Prompt Message Button */}
-
+          {/* Send Prompt Message Button */}
           <button
-            className="p-2 dark:hover:text-blue-500  hover:text-blue-500 transition-all disabled:opacity-50"
+            className="p-2 dark:hover:text-blue-500 hover:text-blue-500 transition-all disabled:opacity-50"
             onClick={() => {
-              if (message.startsWith('/image ')) {
-                const prompt = message.slice(7);
-                handleImageGeneration(prompt);
+              const trimmed = message.trim();
+              if (trimmed.toLowerCase().startsWith('/image')) {
+                const prompt = trimmed.slice(6).trim();
+                if (prompt.length > 0) {
+                  handleImageGeneration(prompt);
+                } else {
+                  console.warn('No prompt provided for image generation.');
+                }
                 setMessage('');
               } else {
                 handleSendMessage();

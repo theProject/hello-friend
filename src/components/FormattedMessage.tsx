@@ -1,4 +1,3 @@
-// src/components/FormattedMessage.tsx
 import React, { ReactNode } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
@@ -102,6 +101,7 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
             alt={imageAlt || 'Image'}
             fill
             style={{ objectFit: 'contain' }}
+            unoptimized
           />
         </div>
       )}
