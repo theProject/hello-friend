@@ -1,8 +1,18 @@
 'use client';
 
-import React from 'react';
-import { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
-import { Mic, Sun, Moon, Upload, Send, Loader, Image as ImageIcon, User, Download, ChevronDown } from 'lucide-react';
+import React, { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
+import {
+  Mic,
+  Sun,
+  Moon,
+  Upload,
+  Send,
+  Loader,
+  Image as ImageIcon,
+  User,
+  Download,
+  ChevronDown
+} from 'lucide-react';
 import Image from 'next/image';
 import FrostscriptLogo from './FrostscriptLogo';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
@@ -35,7 +45,7 @@ export default function FrostScript() {
     name: 'User Name',
     email: 'user@example.com'
   });
-  
+
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
@@ -43,51 +53,20 @@ export default function FrostScript() {
   const getNeumorphicStyle = `${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`;
   const [hasFocused, setHasFocused] = useState(false);
 
-  // Image generation handler
-  const handleImageGeneration = async (prompt: string) => {
-    setIsGeneratingImage(true);
-    try {
-      const response = await fetch('/api/generate-image', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      const data = await response.json();
-      if (data.imageUrl) {
-        const newMessage: Message = {
-          id: crypto.randomUUID(),
-          content: `Generated image for prompt: "${prompt}"`,
-          role: 'assistant',
-          timestamp: new Date().toISOString(),
-          imageUrl: data.imageUrl,
-          imageAlt: prompt
-        };
-        setMessages(prev => [...prev, newMessage]);
-      }
-    } catch (error) {
-      console.error('Error generating image:', error);
-    } finally {
-      setIsGeneratingImage(false);
-    }
-  };
-
   // Photo upload handler
   async function handlePhotoUpload(event: React.ChangeEvent<HTMLInputElement>) {
     if (!event.target.files?.length) return;
     const file = event.target.files[0];
-    
+
     try {
       const formData = new FormData();
       formData.append('photo', file);
-      
+
       const response = await fetch('/api/upload-photo', {
         method: 'POST',
         body: formData
       });
-      
+
       const data = await response.json();
       if (data.url) {
         const newMessage: Message = {
@@ -98,7 +77,7 @@ export default function FrostScript() {
           imageUrl: data.url,
           imageAlt: file.name
         };
-        setMessages(prev => [...prev, newMessage]);
+        setMessages((prev) => [...prev, newMessage]);
       }
     } catch (error) {
       console.error('Error uploading photo:', error);
@@ -117,24 +96,24 @@ export default function FrostScript() {
 
   async function handleSpeechToText() {
     if (isListening) return;
-    
+
     try {
       const response = await fetch('/api/speech-token');
       const { token, region } = await response.json();
-      
+
       const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
       speechConfig.speechRecognitionLanguage = 'en-US';
       speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
-      
+
       const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
       const synthesizer = new sdk.SpeechSynthesizer(speechConfig, audioConfig);
       setSpeechSynthesizer(synthesizer);
-      
+
       const recognizer = new sdk.SpeechRecognizer(speechConfig);
-      
+
       setIsListening(true);
       setShowVoiceInterface(true);
-      
+
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           setMessage(result.text);
@@ -150,87 +129,136 @@ export default function FrostScript() {
       setIsListening(false);
     }
   }
-  
+
   async function handleVoiceMessage(text: string, synthesizer: sdk.SpeechSynthesizer) {
     if (!text.trim()) return;
-    
+
     const newMessage: Message = {
       id: crypto.randomUUID(),
       content: text,
       role: 'user',
       timestamp: new Date().toISOString()
     };
-    
+
     startTransition(() => {
       addOptimisticMessage(newMessage);
     });
-    
+
     setMessage('');
     setIsLoading(true);
-    
+
     try {
       // Keep the voice interface visible
       setShowVoiceInterface(true);
-      
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message: text })
-      });
-      
-      const data = await response.json();
-      
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        content: data.response,
-        role: 'assistant',
-        timestamp: new Date().toISOString()
-      };
-  
-      setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
-      
-      // Set speaking state before starting speech
-      setIsSpeaking(true);
-      setIsListening(false);
-      
-      // Speak the response and wait for it to finish
-      await new Promise((resolve, reject) => {
-        synthesizer.speakTextAsync(
-          data.response,
-          result => {
-            if (result.errorDetails) {
-              console.error('Speech synthesis error:', result.errorDetails);
-              reject(result.errorDetails);
-            } else {
-              resolve(result);
-            }
+
+      // Check if this is an image generation request using natural language detection
+      const isImageGenerationRequest = text.toLowerCase().match(
+        /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|some)? ?(?:image|picture|photo|illustration|artwork|drawing)/i
+      );
+
+      if (isImageGenerationRequest) {
+        // Handle as image generation with voice
+        setIsGeneratingImage(true);
+        const imageResponse = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
           },
-          error => {
-            console.error('Speech synthesis error:', error);
-            reject(error);
-          }
-        );
-      });
-    
-      // After speaking finishes, update speaking state.
+          body: JSON.stringify({ prompt: text })
+        });
+
+        const imageData = await imageResponse.json();
+
+        if (imageData.imageUrl) {
+          const assistantMessage: Message = {
+            id: crypto.randomUUID(),
+            content: `Generated image for: "${text}"`,
+            role: 'assistant',
+            timestamp: new Date().toISOString(),
+            imageUrl: imageData.imageUrl,
+            imageAlt: text
+          };
+          setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+
+          // Speak confirmation of image generation
+          setIsSpeaking(true);
+          await new Promise((resolve, reject) => {
+            synthesizer.speakTextAsync(
+              "I've generated the image you requested.",
+              (result) => {
+                if (result.errorDetails) {
+                  reject(result.errorDetails);
+                } else {
+                  resolve(result);
+                }
+              },
+              (error) => reject(error)
+            );
+          });
+        }
+        setIsGeneratingImage(false);
+      } else {
+        // Handle as normal chat with voice
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: text })
+        });
+
+        const data = await response.json();
+
+        const assistantMessage: Message = {
+          id: crypto.randomUUID(),
+          content: data.response,
+          role: 'assistant',
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+
+        // Set speaking state before starting speech
+        setIsSpeaking(true);
+        setIsListening(false);
+
+        // Speak the response and wait for it to finish
+        await new Promise((resolve, reject) => {
+          synthesizer.speakTextAsync(
+            data.response,
+            (result) => {
+              if (result.errorDetails) {
+                console.error('Speech synthesis error:', result.errorDetails);
+                reject(result.errorDetails);
+              } else {
+                resolve(result);
+              }
+            },
+            (error) => {
+              console.error('Speech synthesis error:', error);
+              reject(error);
+            }
+          );
+        });
+      }
+
+      // After speaking finishes, update speaking state
       setIsSpeaking(false);
-      
-      // Wait a short delay (1 second) to allow for a smooth transition.
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Immediately re-engage listening by fetching a new token and creating a new recognizer.
+
+      // Wait a short delay (1 second) to allow for a smooth transition
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+
+      // Immediately re-engage listening by fetching a new token and creating a new recognizer
       const tokenResponse = await fetch('/api/speech-token');
       const { token: newToken, region: newRegion } = await tokenResponse.json();
-      
+
       const newSpeechConfig = sdk.SpeechConfig.fromAuthorizationToken(newToken, newRegion);
       newSpeechConfig.speechRecognitionLanguage = 'en-US';
       const recognizer = new sdk.SpeechRecognizer(newSpeechConfig);
-      
+
       setIsListening(true);
-      
-      // Listen for the next user input.
+
+      // Listen for the next user input
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           await handleVoiceMessage(result.text, synthesizer);
@@ -239,49 +267,48 @@ export default function FrostScript() {
         }
         recognizer.close();
       });
-    
     } catch (error) {
       console.error('Error in voice interaction:', error);
-      setMessages((prev: Message[]) => prev.filter(msg => msg.id !== newMessage.id));
+      setMessages((prev: Message[]) => prev.filter((msg) => msg.id !== newMessage.id));
       setIsSpeaking(false);
       setIsListening(false);
     } finally {
       setIsLoading(false);
     }
   }
-  
+
   async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
     if (!event.target.files?.length) return;
-    
+
     const files = Array.from(event.target.files);
     setIsLoading(true);
-    
+
     try {
       const formData = new FormData();
-      files.forEach(file => formData.append('files', file));
-      
+      files.forEach((file) => formData.append('files', file));
+
       const response = await fetch('/api/upload', {
         method: 'POST',
         body: formData
       });
-      
+
       const data = await response.json();
-      
+
       const newFiles = data.files.map((file: FileResponse) => ({
         ...file,
         id: crypto.randomUUID(),
         type: 'document'
       }));
-      
+
       setUploadedFiles((prev: UploadedFile[]) => [...prev, ...newFiles]);
 
       const systemMessage: Message = {
         id: crypto.randomUUID(),
-        content: `Files uploaded: ${files.map(f => f.name).join(', ')}`,
+        content: `Files uploaded: ${files.map((f) => f.name).join(', ')}`,
         role: 'assistant',
         timestamp: new Date().toISOString()
       };
-      
+
       setMessages((prev: Message[]) => [...prev, systemMessage]);
     } catch (error) {
       console.error('Error uploading files:', error);
@@ -292,43 +319,76 @@ export default function FrostScript() {
 
   async function handleSendMessage() {
     if (!message.trim() || isLoading) return;
-    
+
     const newMessage: Message = {
       id: crypto.randomUUID(),
       content: message,
       role: 'user',
       timestamp: new Date().toISOString()
     };
-    
+
     startTransition(() => {
       addOptimisticMessage(newMessage);
     });
-    
+
     setMessage('');
     setIsLoading(true);
-    
-    try {
-      const response = await fetch('/api/chat', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ message: newMessage.content })
-      });
-      
-      const data = await response.json();
-      
-      const assistantMessage: Message = {
-        id: crypto.randomUUID(),
-        content: data.response,
-        role: 'assistant',
-        timestamp: new Date().toISOString()
-      };
 
-      setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+    try {
+      // Check if this is an image generation request using natural language detection
+      const isImageGenerationRequest = message.toLowerCase().match(
+        /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|some)? ?(?:image|picture|photo|illustration|artwork|drawing)/i
+      );
+
+      if (isImageGenerationRequest) {
+        // Handle as image generation
+        setIsGeneratingImage(true);
+        const imageResponse = await fetch('/api/generate-image', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ prompt: message })
+        });
+
+        const imageData = await imageResponse.json();
+
+        if (imageData.imageUrl) {
+          const assistantMessage: Message = {
+            id: crypto.randomUUID(),
+            content: `Generated image for: "${message}"`,
+            role: 'assistant',
+            timestamp: new Date().toISOString(),
+            imageUrl: imageData.imageUrl,
+            imageAlt: message
+          };
+          setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+        }
+        setIsGeneratingImage(false);
+      } else {
+        // Handle as normal chat
+        const response = await fetch('/api/chat', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ message: newMessage.content })
+        });
+
+        const data = await response.json();
+
+        const assistantMessage: Message = {
+          id: crypto.randomUUID(),
+          content: data.response,
+          role: 'assistant',
+          timestamp: new Date().toISOString()
+        };
+
+        setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+      }
     } catch (error) {
-      console.error('Error sending message:', error);
-      setMessages((prev: Message[]) => prev.filter(msg => msg.id !== newMessage.id));
+      console.error('Error processing message:', error);
+      setMessages((prev: Message[]) => prev.filter((msg) => msg.id !== newMessage.id));
     } finally {
       setIsLoading(false);
     }
@@ -359,10 +419,8 @@ export default function FrostScript() {
           <div className="relative pt-6 px-4 sm:px-6">
             <div className="flex flex-nowrap justify-between items-center gap-4">
               {/* Logo Section */}
-              <div
-                className={`flex items-center gap-1 p-3 rounded-xl ${isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'}`}
-              >
-                <FrostscriptLogo  />
+              <div className={`flex items-center gap-1 p-3 rounded-xl ${isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'}`}>
+                <FrostscriptLogo />
                 <h1 className="hidden md:block text-2xl font-extrabold bg-gradient-to-tr from-teal-400 via-blue-400 to-blue-500 bg-clip-text text-transparent">
                   FrostScript
                 </h1>
@@ -444,30 +502,32 @@ export default function FrostScript() {
             </div>
           </div>
         </div>
-        {/* Chat Area */}
-        <div ref={chatContainerRef} className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 custom-scrollbar">
-          {optimisticMessages.map((msg) => (
-            <FormattedMessage
-              key={msg.id}
-              content={msg.content}
-              isUser={msg.role === 'user'}
-              imageUrl={msg.imageUrl}
-              imageAlt={msg.imageAlt}
-              onImageClick={(url) => setSelectedImage({ url, alt: msg.imageAlt || 'Image' })}
-            />
-          ))}
-          {isLoading && (
-            <div className="flex justify-center">
-              <Loader className="w-6 h-6 animate-spin text-blue-600" />
-            </div>
-          )}
-          {isGeneratingImage && (
-            <div className="flex flex-col items-center gap-2 p-4">
-              <Loader className="w-8 h-8 animate-spin text-blue-600" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">Generating image...</p>
-            </div>
-          )}
-        </div>
+
+       {/* Chat Area */}
+<div ref={chatContainerRef} className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 custom-scrollbar">
+  {optimisticMessages.map((msg) => (
+    <FormattedMessage
+      key={msg.id}
+      content={msg.content}
+      isUser={msg.role === 'user'}
+      imageUrl={msg.imageUrl}
+      imageAlt={msg.imageAlt}
+      onImageClick={(url) => setSelectedImage({ url, alt: msg.imageAlt || 'Image' })}
+    />
+  ))}
+  {/* Only show the default loading spinner when NOT generating an image */}
+  {!isGeneratingImage && isLoading && (
+    <div className="flex justify-center">
+      <Loader className="w-6 h-6 animate-spin text-blue-600" />
+    </div>
+  )}
+  {isGeneratingImage && (
+    <div className="flex flex-col items-center gap-2 p-4">
+      <Loader className="w-8 h-8 animate-spin text-blue-600" />
+      <p className="text-sm text-gray-500 dark:text-gray-400">Generating image...</p>
+    </div>
+  )}
+</div>
 
         {/* Input Area */}
         <div className={`flex gap-2 items-end p-4 ${isDarkMode ? 'neumorphic-dark-inset' : 'neumorphic-light-inset'}`}>
@@ -485,10 +545,10 @@ export default function FrostScript() {
             {!hasFocused && message === '' && (
               <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 text-blue-500">
                 <span className="block md:hidden text-sm">
-                  Type<span className="font-mono text-teal-500"> /image</span> for creation | | Ask your friend anything!
+                  Ask anything or describe an image to generate...
                 </span>
                 <span className="hidden md:block">
-                  Ask your friend anything here! Create an image? Type <span className="font-mono text-teal-500">/image</span> first to generate images
+                Hi Friend! Ask me anything, I can even create art!
                 </span>
               </div>
             )}
@@ -496,48 +556,21 @@ export default function FrostScript() {
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               onFocus={() => setHasFocused(true)}
-              className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto"
-              rows={1}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
-                  const trimmed = message.trim();
-                  // Check for the command "/image" (case-insensitive)
-                  if (trimmed.toLowerCase().startsWith('/image')) {
-                    // Remove the command part ("/image") and trim the remaining prompt
-                    const prompt = trimmed.slice(6).trim();
-                    if (prompt.length > 0) {
-                      handleImageGeneration(prompt);
-                    } else {
-                      console.warn('No prompt provided for image generation.');
-                    }
-                    setMessage('');
-                  } else {
-                    handleSendMessage();
-                  }
+                  handleSendMessage();
                 }
               }}
-              aria-label="Prompt Input"
+              className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto"
+              rows={1}
+              aria-label="Message Input"
             />
           </div>
 
-          {/* Send Prompt Message Button */}
           <button
             className="p-2 dark:hover:text-blue-500 hover:text-blue-500 transition-all disabled:opacity-50"
-            onClick={() => {
-              const trimmed = message.trim();
-              if (trimmed.toLowerCase().startsWith('/image')) {
-                const prompt = trimmed.slice(6).trim();
-                if (prompt.length > 0) {
-                  handleImageGeneration(prompt);
-                } else {
-                  console.warn('No prompt provided for image generation.');
-                }
-                setMessage('');
-              } else {
-                handleSendMessage();
-              }
-            }}
+            onClick={handleSendMessage}
             disabled={isLoading || !message.trim()}
             aria-label="Send message"
           >
