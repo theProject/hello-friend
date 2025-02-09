@@ -592,7 +592,7 @@ export default function FrostScript() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Type your message here"
+              placeholder=""
               className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto glass-scrollbar"
               rows={1}
               aria-label="Message Input"
