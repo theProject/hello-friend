@@ -9,6 +9,8 @@ interface VoiceInterfaceProps {
   onClose: () => void;
   onStart: () => void; // Called to start listening.
   onStop: () => void;  // (Not used in this interface if conversation is fluid.)
+  glassStyle?: string;
+  messageStyle?: string;
 }
 
 const VoiceInterface: React.FC<VoiceInterfaceProps> = ({ 

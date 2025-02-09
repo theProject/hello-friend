@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useRef, useEffect, useOptimistic, useState, startTransition } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import {
   Mic,
   Sun,
@@ -10,11 +10,10 @@ import {
   Loader,
   Image as ImageIcon,
   User,
-  Download,
-  ChevronDown
+  Download
 } from 'lucide-react';
+import { FaConnectdevelop } from "react-icons/fa6";
 import Image from 'next/image';
-import FrostscriptLogo from './FrostscriptLogo';
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import VoiceInterface from './VoiceInterface';
 import FormattedMessage from './FormattedMessage';
@@ -30,10 +29,6 @@ export default function FrostScript() {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
-  const [optimisticMessages, addOptimisticMessage] = useOptimistic<Message[], Message>(
-    messages,
-    (state, newMessage) => [...state, newMessage]
-  );
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [showVoiceInterface, setShowVoiceInterface] = useState(false);
   const [speechSynthesizer, setSpeechSynthesizer] = useState<sdk.SpeechSynthesizer | null>(null);
@@ -50,7 +45,8 @@ export default function FrostScript() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const getNeumorphicStyle = `${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'}`;
+  const getGlassStyle = isDarkMode ? 'glass-base-dark' : 'glass-base-light';
+  const getGlassMessage = isDarkMode ? 'glass-message-dark' : 'glass-message-light';
   const [hasFocused, setHasFocused] = useState(false);
 
   // Photo upload handler
@@ -140,24 +136,20 @@ export default function FrostScript() {
       timestamp: new Date().toISOString()
     };
 
-    startTransition(() => {
-      addOptimisticMessage(newMessage);
-    });
+    // Optimistically add the user's message.
+    setMessages((prev) => [...prev, newMessage]);
 
     setMessage('');
     setIsLoading(true);
 
     try {
-      // Keep the voice interface visible
       setShowVoiceInterface(true);
 
-      // Check if this is an image generation request using natural language detection
       const isImageGenerationRequest = text.toLowerCase().match(
         /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|some)? ?(?:image|picture|photo|illustration|artwork|drawing)/i
       );
 
       if (isImageGenerationRequest) {
-        // Handle as image generation with voice
         setIsGeneratingImage(true);
         const imageResponse = await fetch('/api/generate-image', {
           method: 'POST',
@@ -178,9 +170,8 @@ export default function FrostScript() {
             imageUrl: imageData.imageUrl,
             imageAlt: text
           };
-          setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+          setMessages((prev) => [...prev, assistantMessage]);
 
-          // Speak confirmation of image generation
           setIsSpeaking(true);
           await new Promise((resolve, reject) => {
             synthesizer.speakTextAsync(
@@ -198,7 +189,6 @@ export default function FrostScript() {
         }
         setIsGeneratingImage(false);
       } else {
-        // Handle as normal chat with voice
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {
@@ -216,13 +206,11 @@ export default function FrostScript() {
           timestamp: new Date().toISOString()
         };
 
-        setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+        setMessages((prev) => [...prev, assistantMessage]);
 
-        // Set speaking state before starting speech
         setIsSpeaking(true);
         setIsListening(false);
 
-        // Speak the response and wait for it to finish
         await new Promise((resolve, reject) => {
           synthesizer.speakTextAsync(
             data.response,
@@ -242,13 +230,10 @@ export default function FrostScript() {
         });
       }
 
-      // After speaking finishes, update speaking state
       setIsSpeaking(false);
 
-      // Wait a short delay (1 second) to allow for a smooth transition
       await new Promise((resolve) => setTimeout(resolve, 1000));
 
-      // Immediately re-engage listening by fetching a new token and creating a new recognizer
       const tokenResponse = await fetch('/api/speech-token');
       const { token: newToken, region: newRegion } = await tokenResponse.json();
 
@@ -258,7 +243,6 @@ export default function FrostScript() {
 
       setIsListening(true);
 
-      // Listen for the next user input
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           await handleVoiceMessage(result.text, synthesizer);
@@ -269,7 +253,8 @@ export default function FrostScript() {
       });
     } catch (error) {
       console.error('Error in voice interaction:', error);
-      setMessages((prev: Message[]) => prev.filter((msg) => msg.id !== newMessage.id));
+      // Remove the user message if an error occurs.
+      setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
       setIsSpeaking(false);
       setIsListening(false);
     } finally {
@@ -300,7 +285,7 @@ export default function FrostScript() {
         type: 'document'
       }));
 
-      setUploadedFiles((prev: UploadedFile[]) => [...prev, ...newFiles]);
+      setUploadedFiles((prev) => [...prev, ...newFiles]);
 
       const systemMessage: Message = {
         id: crypto.randomUUID(),
@@ -309,7 +294,7 @@ export default function FrostScript() {
         timestamp: new Date().toISOString()
       };
 
-      setMessages((prev: Message[]) => [...prev, systemMessage]);
+      setMessages((prev) => [...prev, systemMessage]);
     } catch (error) {
       console.error('Error uploading files:', error);
     } finally {
@@ -327,21 +312,17 @@ export default function FrostScript() {
       timestamp: new Date().toISOString()
     };
 
-    startTransition(() => {
-      addOptimisticMessage(newMessage);
-    });
-
+    // Add the user message immediately.
+    setMessages((prev) => [...prev, newMessage]);
     setMessage('');
     setIsLoading(true);
 
     try {
-      // Check if this is an image generation request using natural language detection
       const isImageGenerationRequest = message.toLowerCase().match(
         /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|some)? ?(?:image|picture|photo|illustration|artwork|drawing)/i
       );
 
       if (isImageGenerationRequest) {
-        // Handle as image generation
         setIsGeneratingImage(true);
         const imageResponse = await fetch('/api/generate-image', {
           method: 'POST',
@@ -362,11 +343,10 @@ export default function FrostScript() {
             imageUrl: imageData.imageUrl,
             imageAlt: message
           };
-          setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+          setMessages((prev) => [...prev, assistantMessage]);
         }
         setIsGeneratingImage(false);
       } else {
-        // Handle as normal chat
         const response = await fetch('/api/chat', {
           method: 'POST',
           headers: {
@@ -384,11 +364,13 @@ export default function FrostScript() {
           timestamp: new Date().toISOString()
         };
 
-        setMessages((prev: Message[]) => [...prev, newMessage, assistantMessage]);
+        setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (error) {
       console.error('Error processing message:', error);
-      setMessages((prev: Message[]) => prev.filter((msg) => msg.id !== newMessage.id));
+      setMessages((prev) =>
+        prev.filter((msg) => msg.id !== newMessage.id)
+      );
     } finally {
       setIsLoading(false);
     }
@@ -398,7 +380,7 @@ export default function FrostScript() {
     if (chatContainerRef.current) {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
-  }, [optimisticMessages]);
+  }, [messages]);
 
   useEffect(() => {
     return () => {
@@ -409,130 +391,179 @@ export default function FrostScript() {
   }, [speechSynthesizer]);
 
   return (
-    <div className={`min-h-screen p-4 ${isDarkMode ? 'bg-gray-900 text-white' : 'bg-gray-100 text-gray-900'}`}>
-      <div className={`max-w-4xl mx-auto ${getNeumorphicStyle}`}>
-        {/* Header Section */}
-        <div className="relative mb-8">
-          {/* Raised header panel */}
-          <div className={`absolute inset-0 top-4 ${isDarkMode ? 'neumorphic-dark' : 'neumorphic-light'} h-20 rounded-2xl`} />
-          {/* Content Layer */}
-          <div className="relative pt-6 px-4 sm:px-6">
-            <div className="flex flex-nowrap justify-between items-center gap-4">
-              {/* Logo Section */}
-              <div className={`flex items-center gap-1 p-3 rounded-xl ${isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'}`}>
-                <FrostscriptLogo />
-                <h1 className="hidden md:block text-2xl font-extrabold bg-gradient-to-tr from-teal-400 via-blue-400 to-blue-500 bg-clip-text text-transparent">
-                  FrostScript
-                </h1>
+    <div
+      className={`min-h-screen relative overflow-hidden ${
+        isDarkMode ? 'gradient-dark text-gray-100' : 'gradient-light text-gray-800'
+      } transition-colors duration-500`}
+    >
+      {/* Background Effects */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div
+          className={`absolute top-0 left-1/4 w-96 h-96 rounded-full ${
+            isDarkMode ? 'bg-purple-600/20' : 'bg-purple-400/30'
+          } blur-3xl animate-pulse`}
+        />
+        <div
+          className={`absolute bottom-1/4 right-0 w-96 h-96 rounded-full ${
+            isDarkMode ? 'bg-blue-600/20' : 'bg-blue-400/30'
+          } blur-3xl animate-pulse delay-700`}
+        />
+        <div
+          className={`absolute top-1/2 left-1/2 w-96 h-96 rounded-full ${
+            isDarkMode ? 'bg-indigo-600/20' : 'bg-pink-400/30'
+          } blur-3xl animate-pulse delay-1000 -translate-x-1/2 -translate-y-1/2`}
+        />
+      </div>
+
+      {/* Header Section */}
+      <div className="relative mb-8">
+        <div className={`${getGlassMessage} p-4`}>
+          <div className="flex flex-nowrap justify-between items-center gap-4">
+            {/* Logo Section */}
+            <div className="flex items-center gap-3 group">
+              <div
+                className={`${getGlassStyle} p-3 rounded-xl transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
+              >
+                <FaConnectdevelop
+                  className={`w-10 h-10 transition-colors duration-300 ${
+                    isDarkMode
+                      ? 'text-indigo-400 group-hover:text-indigo-600'
+                      : 'text-indigo-600 group-hover:text-indigo-700'
+                  }`}
+                />
               </div>
-              {/* Utility Icons */}
-              <div className={`flex items-center gap-2 p-2 rounded-xl ${isDarkMode ? 'neumorphic-dark-inset bg-gray-900' : 'neumorphic-light-inset bg-gray-200'}`}>
-                {/* File Upload */}
-                <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    className="hidden"
-                    multiple
-                    onChange={handleFileUpload}
-                    accept=".pdf,.doc,.docx,.txt"
-                    aria-label="Upload files"
-                  />
-                  <Upload className="w-5 h-5" />
-                </label>
-                {/* Photo Upload */}
-                <label className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all">
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    className="hidden"
-                    onChange={handlePhotoUpload}
-                    accept="image/*"
-                    aria-label="Upload photo"
-                  />
-                  <ImageIcon className="w-5 h-5" />
-                </label>
-                {/* Theme Toggle */}
-                <button
-                  onClick={() => setIsDarkMode(!isDarkMode)}
-                  className="p-2 hover:text-blue-500 dark:hover:text-blue-500 transition-all"
-                  aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-                >
-                  {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                </button>
-                {/* Profile Menu */}
-                <div className="relative">
-                  <button className="flex items-center gap-2" aria-label="Profile menu">
-                    {profile.imageUrl ? (
-                      <div className="relative w-8 h-8">
-                        <Image
-                          src={profile.imageUrl}
-                          alt={profile.name}
-                          fill
-                          sizes="32px"
-                          className="rounded-full object-cover border-2 border-blue-00"
-                          priority
-                        />
-                      </div>
-                    ) : (
-                      <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center">
-                        <User className="w-5 h-5 text-white" />
-                      </div>
-                    )}
-                    <ChevronDown className="w-1 h-1" />
-                  </button>
-                  {showProfileMenu && (
-                    <div className="absolute right-0 mt-2 w-48 py-2 bg-white dark:bg-gray-800 rounded-lg shadow-xl z-50">
-                      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700">
-                        <p className="text-sm font-semibold">{profile.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{profile.email}</p>
-                      </div>
-                      <div className="py-1">
-                        <button className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-gray-700">
-                          Profile Settings
-                        </button>
-                        <button className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100 dark:hover:bg-gray-700">
-                          Sign Out
-                        </button>
-                      </div>
+              <h1 className="hidden md:block text-3xl font-extrabold bg-gradient-to-r from-indigo-500 via-purple-800 to-indigo-600 bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-wider">
+                Good friend.
+              </h1>
+            </div>
+
+            {/* Utility Buttons */}
+            <div className="flex items-center gap-2">
+              {/* File Upload Button */}
+              <label
+                className={`${getGlassStyle} p-2 rounded-xl transform transition-all duration-300 hover:scale-110 hover:rotate-12 hover:bg-opacity-40`}
+              >
+                <span className="sr-only">Upload File</span>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  className="hidden"
+                  multiple
+                  onChange={handleFileUpload}
+                  accept=".pdf,.doc,.docx,.txt"
+                />
+                <Upload className="w-5 h-5" />
+              </label>
+
+              {/* Photo Upload Button */}
+              <label
+                className={`${getGlassStyle} p-2 rounded-xl transform transition-all duration-300 hover:scale-110 hover:-rotate-12 hover:bg-opacity-40`}
+              >
+                <span className="sr-only">Upload Photo</span>
+                <input
+                  ref={photoInputRef}
+                  type="file"
+                  className="hidden"
+                  onChange={handlePhotoUpload}
+                  accept="image/*"
+                />
+                <ImageIcon className="w-5 h-5" />
+              </label>
+
+              {/* Theme Toggle Button */}
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`${getGlassStyle} p-2 rounded-xl transform transition-all duration-300 hover:scale-110 hover:rotate-12 ${
+                  isDarkMode
+                    ? 'hover:bg-yellow-500/20 hover:text-yellow-300'
+                    : 'hover:bg-blue-500/20 hover:text-blue-600'
+                }`}
+              >
+                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
+
+              {/* Profile Button */}
+              <div className={`${getGlassStyle} p-2 rounded-xl relative`}>
+                <button className="flex items-center gap-2 transform transition-all duration-300 hover:scale-105">
+                  {profile.imageUrl ? (
+                    <div className="relative w-8 h-8">
+                      <Image
+                        src={profile.imageUrl}
+                        alt={profile.name}
+                        fill
+                        sizes="32px"
+                        className="rounded-full object-cover border-2 border-blue-400/30"
+                        priority
+                      />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-blue-500/30 backdrop-blur-sm flex items-center justify-center">
+                      <User className="w-5 h-5" />
                     </div>
                   )}
-                </div>
+                </button>
+
+                {showProfileMenu && (
+                  <div
+                    className={`${getGlassStyle} absolute right-0 mt-2 w-48 py-2 rounded-xl shadow-xl z-50 animate-fade-scale`}
+                  >
+                    <div className="px-4 py-2 border-b border-gray-200/20">
+                      <p className="text-sm font-semibold">{profile.name}</p>
+                      <p className="text-xs opacity-70">{profile.email}</p>
+                    </div>
+                    <div className="py-1">
+                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition-colors duration-200">
+                        Profile Settings
+                      </button>
+                      <button className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10 transition-colors duration-200">
+                        Sign Out
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>
         </div>
+      </div>
 
-       {/* Chat Area */}
-<div ref={chatContainerRef} className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 custom-scrollbar">
-  {optimisticMessages.map((msg) => (
-    <FormattedMessage
-      key={msg.id}
-      content={msg.content}
-      isUser={msg.role === 'user'}
-      imageUrl={msg.imageUrl}
-      imageAlt={msg.imageAlt}
-      onImageClick={(url) => setSelectedImage({ url, alt: msg.imageAlt || 'Image' })}
-    />
-  ))}
-  {/* Only show the default loading spinner when NOT generating an image */}
-  {!isGeneratingImage && isLoading && (
-    <div className="flex justify-center">
-      <Loader className="w-6 h-6 animate-spin text-blue-600" />
-    </div>
-  )}
-  {isGeneratingImage && (
-    <div className="flex flex-col items-center gap-2 p-4">
-      <Loader className="w-8 h-8 animate-spin text-blue-600" />
-      <p className="text-sm text-gray-500 dark:text-gray-400">Generating image...</p>
-    </div>
-  )}
-</div>
+      {/* Chat Area */}
+      <div
+        ref={chatContainerRef}
+        className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 glass-scrollbar"
+      >
+        {messages.map((msg) => (
+          <FormattedMessage
+            key={msg.id}
+            content={msg.content}
+            isUser={msg.role === 'user'}
+            imageUrl={msg.imageUrl}
+            imageAlt={msg.imageAlt}
+            onImageClick={(url) => setSelectedImage({ url, alt: msg.imageAlt || 'Image' })}
+            glassStyle={getGlassStyle}
+            messageStyle={getGlassMessage}
+          />
+        ))}
+        {isLoading && (
+          <div className="flex justify-center">
+            <Loader className="w-6 h-6 animate-spin text-blue-400" />
+          </div>
+        )}
+        {isGeneratingImage && (
+          <div className={`${getGlassStyle} flex flex-col items-center gap-2 p-4 rounded-xl`}>
+            <Loader className="w-8 h-8 animate-spin text-blue-400" />
+            <p className="text-sm opacity-70">Generating image...</p>
+          </div>
+        )}
+      </div>
 
-        {/* Input Area */}
-        <div className={`flex gap-2 items-end p-4 ${isDarkMode ? 'neumorphic-dark-inset' : 'neumorphic-light-inset'}`}>
+      {/* Input Area */}
+      <div className={`${getGlassMessage} p-4 backdrop-blur-xl`}>
+        <div className="flex gap-2 items-end">
           <button
-            className={`p-2 rounded-full transition-all ${isListening ? 'text-blue-600 bg-blue-400 dark:bg-blue-700' : 'hover:text-blue-500 dark:hover:text-blue-500'}`}
+            className={`${getGlassStyle} p-2 rounded-full glass-hover ${
+              isListening ? 'bg-blue-500/30 text-blue-300' : ''
+            }`}
             onClick={handleSpeechToText}
             disabled={isListening}
             aria-label="Start voice input"
@@ -541,14 +572,13 @@ export default function FrostScript() {
           </button>
 
           <div className="flex-1 relative">
-            {/* Custom responsive placeholder overlay */}
             {!hasFocused && message === '' && (
-              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 text-blue-500">
+              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 opacity-70">
                 <span className="block md:hidden text-sm">
                   Ask anything or describe an image to generate...
                 </span>
                 <span className="hidden md:block">
-                Hi Friend! Ask me anything, I can even create art!
+                  Hi Friend! Ask me anything, I can even create art!
                 </span>
               </div>
             )}
@@ -562,14 +592,15 @@ export default function FrostScript() {
                   handleSendMessage();
                 }
               }}
-              className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto"
+              placeholder="Type your message here"
+              className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto glass-scrollbar"
               rows={1}
               aria-label="Message Input"
             />
           </div>
 
           <button
-            className="p-2 dark:hover:text-blue-500 hover:text-blue-500 transition-all disabled:opacity-50"
+            className={`${getGlassStyle} p-2 rounded-xl glass-hover glass-rotate-hover disabled:opacity-50 disabled:cursor-not-allowed`}
             onClick={handleSendMessage}
             disabled={isLoading || !message.trim()}
             aria-label="Send message"
@@ -577,39 +608,38 @@ export default function FrostScript() {
             <Send className="w-6 h-6" />
           </button>
         </div>
-
-        {/* Uploaded Files List */}
-        {uploadedFiles.length > 0 && (
-          <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
-            <div className="flex justify-between items-center mb-2">
-              <h2 className="text-sm font-semibold">Uploaded Files</h2>
-              <button
-                onClick={() => setUploadedFiles([])}
-                className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
-                aria-label="Clear uploaded files"
-              >
-                Clear All
-              </button>
-            </div>
-            <ul className="space-y-1">
-              {uploadedFiles.map((file) => (
-                <li key={file.id} className="text-sm text-gray-600 dark:text-gray-300 flex items-center justify-between">
-                  <span>{file.name}</span>
-                  {file.type === 'image' && (
-                    <button
-                      onClick={() => handleImageDownload(file.url, file.name)}
-                      className="p-1 hover:text-blue-600 transition-colors"
-                      aria-label="Download file"
-                    >
-                      <Download className="w-4 h-4" />
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
       </div>
+
+      {/* Uploaded Files List */}
+      {uploadedFiles.length > 0 && (
+        <div className={`${getGlassMessage} mt-4 p-4 rounded-xl`}>
+          <div className="flex justify-between items-center mb-2">
+            <h2 className="text-sm font-semibold">Uploaded Files</h2>
+            <button
+              onClick={() => setUploadedFiles([])}
+              className="opacity-70 hover:opacity-100 transition-opacity"
+            >
+              Clear All
+            </button>
+          </div>
+          <ul className="space-y-1">
+            {uploadedFiles.map((file) => (
+              <li key={file.id} className="text-sm flex items-center justify-between">
+                <span>{file.name}</span>
+                {file.type === 'image' && (
+                  <button
+                    onClick={() => handleImageDownload(file.url, file.name)}
+                    className={`${getGlassStyle} p-1 rounded-lg glass-hover`}
+                    aria-label="Download file"
+                  >
+                    <Download className="w-4 h-4" />
+                  </button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {/* Voice Interface */}
       {showVoiceInterface && (
@@ -623,9 +653,9 @@ export default function FrostScript() {
             setIsSpeaking(false);
           }}
           onStart={handleSpeechToText}
-          onStop={() => {
-            setIsListening(false);
-          }}
+          onStop={() => setIsListening(false)}
+          glassStyle={getGlassStyle}
+          messageStyle={getGlassMessage}
         />
       )}
 
@@ -636,6 +666,7 @@ export default function FrostScript() {
           alt={selectedImage.alt}
           onClose={() => setSelectedImage(null)}
           onDownload={() => selectedImage.url && handleImageDownload(selectedImage.url)}
+          glassStyle={getGlassStyle}
         />
       )}
     </div>

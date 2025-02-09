@@ -1,23 +1,50 @@
 // src/utils/memory-util.ts
-import { clientPromise } from './mongodb';
+import { ObjectId } from 'mongodb';
+import { clientPromise } from './mongodb'; // Adjust the path if needed
 
-interface Memory {
-  type: string;
+// Extend our memory record interface to include an embedding vector.
+export interface MemoryRecord {
+  id: string;
   content: string;
-  embedding?: number[];
   timestamp: Date;
-  metadata: {
+  type: string;
+  confirmed: boolean;
+  embedding: number[];
+  metadata?: {
     type: string;
     created_at: Date;
-    error?: string;
     fileName?: string;
   };
-  score?: number;
 }
 
+// Define a type for the raw document stored in MongoDB.
+interface MemoryDoc {
+  _id: ObjectId;
+  content: string;
+  timestamp: Date;
+  type: string;
+  confirmed: boolean;
+  embedding: number[];
+  metadata?: {
+    type: string;
+    created_at: Date;
+    fileName?: string;
+  };
+}
+
+// Helper function to get the database instance.
+async function getDb() {
+  const client = await clientPromise;
+  const db = client.db(process.env.MONGODB_DATABASE_NAME);
+  return db;
+}
+
+/**
+ * Compute an embedding vector for a given text using Azure OpenAI.
+ */
 async function getEmbedding(text: string): Promise<number[]> {
   const response = await fetch(
-    `${process.env.AZURE_OPENAI_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME}/embeddings?api-version=2024-02-15-preview`,
+    `${process.env.AZURE_OPENAI_EMBEDDING_ENDPOINT}/openai/deployments/${process.env.AZURE_OPENAI_EMBEDDING_DEPLOYMENT_NAME}/embeddings?api-version=2023-03-15-preview`,
     {
       method: 'POST',
       headers: {
@@ -26,133 +53,120 @@ async function getEmbedding(text: string): Promise<number[]> {
       },
       body: JSON.stringify({
         input: text,
+        model: 'text-embedding-ada-002'
       }),
     }
   );
 
   if (!response.ok) {
-    throw new Error(`Azure OpenAI API error: ${response.statusText}`);
+    throw new Error(`Embedding API error: ${response.statusText}`);
   }
 
   const data = await response.json();
+  // Assumes the API returns an array with at least one embedding.
   return data.data[0].embedding;
 }
 
-export async function storeMemory(content: string, type: string = 'message', fileName?: string): Promise<void> {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DATABASE_NAME);
-  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
-
-  try {
-    const embedding = await getEmbedding(content);
-
-    await collection.insertOne({
-      type,
-      content,
-      embedding,
-      timestamp: new Date(),
-      metadata: {
-        type,
-        created_at: new Date(),
-        fileName
-      }
-    });
-
-    // Create text index for fallback searches
-    await collection.createIndex({ content: "text" });
-    
-  } catch (error) {
-    console.error('Error storing memory:', error);
-    await collection.insertOne({
-      type,
-      content,
-      timestamp: new Date(),
-      metadata: {
-        type,
-        created_at: new Date(),
-        error: 'Failed to generate embedding',
-        fileName
-      }
-    });
-  }
+/**
+ * Store a memory record in the "memories" collection.
+ * Computes an embedding for the content and returns the inserted memory (including its generated id).
+ */
+export async function storeMemory(
+  content: string,
+  type: string,
+  options?: { confirmed?: boolean }
+): Promise<MemoryRecord> {
+  const db = await getDb();
+  const embedding = await getEmbedding(content);
+  const memory = {
+    content,
+    type,
+    confirmed: options?.confirmed ?? true,
+    timestamp: new Date(),
+    embedding,
+  };
+  const result = await db.collection('memories').insertOne(memory);
+  return { id: result.insertedId.toString(), ...memory };
 }
 
-export async function searchMemories(query: string, limit: number = 5): Promise<Memory[]> {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DATABASE_NAME);
-  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
+/**
+ * Update the confirmation status of a memory record.
+ */
+export async function updateMemoryStatus(
+  id: string,
+  update: { confirmed: boolean }
+): Promise<void> {
+  const db = await getDb();
+  await db.collection('memories').updateOne(
+    { _id: new ObjectId(id) },
+    { $set: { confirmed: update.confirmed } }
+  );
+}
 
-  try {
-    const queryEmbedding = await getEmbedding(query);
+/**
+ * Search for memories based on a query string using vector search.
+ * For memories of type "message", only confirmed entries are returned.
+ */
+export async function searchMemories(query: string, limit: number): Promise<MemoryRecord[]> {
+  const db = await getDb();
+  // Compute the embedding for the query.
+  const queryEmbedding = await getEmbedding(query);
 
-    // First try vector search
-    const memories: Memory[] = await collection.aggregate<Memory>([
+  // Use MongoDB Atlas Search's knnBeta operator with explicit generic typing.
+  const memories = await db
+    .collection<MemoryDoc>('memories')
+    .aggregate<MemoryDoc>([
       {
-        "$search": {
-          "cosmosSearch": {
-            "vector": queryEmbedding,
-            "path": "embedding",
-            "k": limit
+        $search: {
+          knnBeta: {
+            vector: queryEmbedding,
+            path: 'embedding',
+            k: limit,
           }
         }
       },
+      // Match only documents where either the type is not "message"
+      // or, if it is "message", it must be confirmed.
       {
-        "$project": {
-          "_id": 1,
-          "content": 1,
-          "timestamp": 1,
-          "type": 1,
-          "metadata": 1,
-          "score": { "$meta": "searchScore" }
+        $match: {
+          $or: [
+            { type: { $ne: 'message' } },
+            { type: 'message', confirmed: true }
+          ]
         }
       }
-    ]).toArray();
+    ])
+    .toArray();
 
-    // If no results from vector search, try text search
-    if (memories.length === 0) {
-      const textSearchResults = await collection
-        .find<Memory>({
-          $text: { $search: query }
-        })
-        .limit(limit)
-        .toArray();
-
-      return textSearchResults;
-    }
-
-    return memories;
-  } catch (error) {
-    console.error('Error searching memories:', error);
-    // Fallback to basic text search if both vector and text search fail
-    const fallbackResults = await collection
-      .find<Memory>({
-        content: { $regex: query, $options: 'i' }
-      })
-      .limit(limit)
-      .toArray();
-
-    return fallbackResults;
-  }
+  return memories.map((mem: MemoryDoc) => ({
+    id: mem._id.toString(),
+    content: mem.content,
+    timestamp: mem.timestamp,
+    type: mem.type,
+    confirmed: mem.confirmed,
+    embedding: mem.embedding,
+    metadata: mem.metadata,
+  }));
 }
 
-export async function getRecentConversation(limit: number = 10): Promise<Memory[]> {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DATABASE_NAME);
-  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
-
-  const memories = await collection
-    .find<Memory>({ type: "message" })
+/**
+ * Retrieve the most recent confirmed conversation messages.
+ */
+export async function getRecentConversation(limit: number): Promise<MemoryRecord[]> {
+  const db = await getDb();
+  const conversations = await db
+    .collection<MemoryDoc>('memories')
+    .find({ confirmed: true, type: 'message' })
     .sort({ timestamp: -1 })
     .limit(limit)
     .toArray();
-
-  return memories;
-}
-
-export async function clearMemories(): Promise<void> {
-  const client = await clientPromise;
-  const db = client.db(process.env.MONGODB_DATABASE_NAME);
-  const collection = db.collection<Memory>(process.env.MONGODB_COLLECTION_NAME!);
-
-  await collection.deleteMany({});
+  return conversations.map((conv: MemoryDoc) => ({
+    id: conv._id.toString(),
+    content: conv.content,
+    timestamp: conv.timestamp,
+    type: conv.type,
+    confirmed: conv.confirmed,
+    embedding: conv.embedding,
+    metadata: conv.metadata,
+  }));
 }

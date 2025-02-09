@@ -7,7 +7,9 @@ interface ImageModalProps {
   imageUrl: string;
   alt: string;
   onClose: () => void;
-  onDownload?: () => void;
+  onDownload: () => void;
+  glassStyle?: string;
+  messageStyle?: string;
 }
 
 const ImageModal: React.FC<ImageModalProps> = ({ imageUrl, alt, onClose, onDownload }) => {

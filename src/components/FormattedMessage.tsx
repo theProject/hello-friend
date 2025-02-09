@@ -2,7 +2,7 @@ import React, { ReactNode } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
-import CodeBlock from './CodeBlock'; // Custom code block using highlight.js
+import CodeBlock from './CodeBlock';
 
 interface FormattedMessageProps {
   content: string;
@@ -10,6 +10,8 @@ interface FormattedMessageProps {
   imageUrl?: string;
   imageAlt?: string;
   onImageClick?: (url: string) => void;
+  glassStyle?: string; // New prop for glass base style
+  messageStyle?: string; // New prop for message-specific style
 }
 
 interface MarkdownComponentProps {
@@ -18,7 +20,6 @@ interface MarkdownComponentProps {
   ordered?: boolean;
 }
 
-// Extend the props for the code component to include "inline"
 interface CodeProps extends React.HTMLAttributes<HTMLElement> {
   inline?: boolean;
   className?: string;
@@ -31,20 +32,25 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
   imageUrl,
   imageAlt,
   onImageClick,
+  glassStyle = 'glass-base-light',
+  messageStyle = 'glass-message-light',
 }) => {
   const components: Partial<Components> = {
-    // Render code blocks using our CodeBlock component
+    // Render code blocks using our CodeBlock component with glass styling
     code({ inline, className, children, ...props }: CodeProps) {
       if (inline) {
         return (
-          <code className="px-2 py-2 rounded bg-gray-700 text-gray-100" {...props}>
+          <code 
+            className={`px-2 py-1 rounded ${glassStyle} backdrop-blur-md`} 
+            {...props}
+          >
             {children}
           </code>
         );
       } else {
         return (
           <div className="my-2">
-            <CodeBlock className={className}>
+            <CodeBlock className={`${glassStyle} backdrop-blur-md ${className}`}>
               {String(children).replace(/\n$/, '')}
             </CodeBlock>
           </div>
@@ -82,27 +88,39 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
 
   return (
     <div
-      className={`mb-4 p-3 rounded-lg ${
-        isUser
-          ? 'ml-auto max-w-md bg-gradient-to-r from-blue-600 to-indigo-600 text-white'
-          : 'mr-auto max-w-lg bg-gray-200 text-gray-800'
-      }`}
+      className={`mb-4 p-4 backdrop-blur-lg rounded-2xl transform transition-all duration-300
+        ${isUser ? 'ml-auto' : 'mr-auto'} max-w-[80%] 
+        ${isUser 
+          ? `${messageStyle} rounded-tr-none hover:-translate-y-1 hover:-rotate-1` 
+          : `${messageStyle} rounded-tl-none hover:-translate-y-1 hover:rotate-1`}
+        ${isUser
+          ? 'bg-opacity-40 border border-white/20' 
+          : 'bg-opacity-30 border border-white/10'}
+        animate-fade-scale`}
     >
-      <ReactMarkdown remarkPlugins={[remarkGfm]} components={components}>
+      <ReactMarkdown 
+        remarkPlugins={[remarkGfm]} 
+        components={components}
+        className="prose prose-sm max-w-none prose-headings:text-inherit prose-p:text-inherit"
+      >
         {content}
       </ReactMarkdown>
+      
       {imageUrl && (
         <div
-          className="relative mt-2 w-full h-64 rounded cursor-pointer"
+          className={`relative mt-4 w-full overflow-hidden rounded-xl cursor-pointer
+            ${glassStyle} p-2 transform transition-all duration-300 hover:scale-[1.02]`}
           onClick={() => onImageClick && onImageClick(imageUrl)}
         >
-          <Image
-            src={imageUrl}
-            alt={imageAlt || 'Image'}
-            fill
-            style={{ objectFit: 'contain' }}
-            unoptimized
-          />
+          <div className="relative w-full h-64">
+            <Image
+              src={imageUrl}
+              alt={imageAlt || 'Image'}
+              fill
+              className="object-contain rounded-lg"
+              unoptimized
+            />
+          </div>
         </div>
       )}
     </div>
