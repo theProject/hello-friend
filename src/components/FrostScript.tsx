@@ -431,7 +431,7 @@ export default function FrostScript() {
                 className={`$ transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
               >
                 <FaConnectdevelop
-                  className={`w-10 h-10 transition-colors duration-300 ${
+                  className={`w-12 h-12 transition-colors duration-300 ${
                     isDarkMode
                       ? 'text-indigo-400 group-hover:text-indigo-600'
                       : 'text-indigo-600 group-hover:text-indigo-700'
@@ -598,7 +598,6 @@ export default function FrostScript() {
                   handleSendMessage();
                 }
               }}
-              placeholder="Test Text"
               className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto glass-scrollbar"
               rows={1}
               aria-label="Message Input"
