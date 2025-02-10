@@ -1,7 +1,6 @@
-'use client';
+"use client";
 
-import { Permanent_Marker } from 'next/font/google';
-import React, { useRef, useEffect, useState } from 'react';
+import React, { useRef, useEffect, useState } from "react";
 import {
   Mic,
   Sun,
@@ -11,48 +10,55 @@ import {
   Loader,
   Image as ImageIcon,
   User,
-  Download
-} from 'lucide-react';
+  Download,
+} from "lucide-react";
 import { FaConnectdevelop } from "react-icons/fa6";
-import Image from 'next/image';
-import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
-import VoiceInterface from './VoiceInterface';
-import FormattedMessage from './FormattedMessage';
-import ImageModal from './ImageModal';
-import { imageCache } from '@/utils/imageCache';
-import { saveToDevice } from '@/utils/imageUtils';
-import type { Message, UploadedFile, FileResponse, ProfileInfo } from '@/types';
+import Image from "next/image";
+import * as sdk from "microsoft-cognitiveservices-speech-sdk";
+import VoiceInterface from "./VoiceInterface";
+import FormattedMessage from "./FormattedMessage";
+import ImageModal from "./ImageModal";
+import { imageCache } from "@/utils/imageCache";
+import { saveToDevice } from "@/utils/imageUtils";
+import type { Message, UploadedFile, FileResponse, ProfileInfo } from "@/types";
 
-const permanentMarker = Permanent_Marker({
-  subsets: ['latin'],
-  weight: '400', // You can adjust the weight if needed.
+// Import and load the Expletus Sans font at module scope.
+import { Expletus_Sans } from "next/font/google";
+const permanentMarker = Expletus_Sans({
+  subsets: ["latin"],
+  weight: "700",
 });
 
+// Import the GlowingChatBubble component for assistant messages.
+import { GlowingChatBubble } from "./GlowingChatBubble";
+
 export default function FrostScript() {
-  const [isDarkMode, setIsDarkMode] = useState(true);
-  const [message, setMessage] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState(true); // default to dark mode
+  const [message, setMessage] = useState("");
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
   const [showVoiceInterface, setShowVoiceInterface] = useState(false);
-  const [speechSynthesizer, setSpeechSynthesizer] = useState<sdk.SpeechSynthesizer | null>(null);
-  const [selectedImage, setSelectedImage] = useState<{ url: string; alt: string } | null>(null);
+  const [speechSynthesizer, setSpeechSynthesizer] =
+    useState<sdk.SpeechSynthesizer | null>(null);
+  const [selectedImage, setSelectedImage] =
+    useState<{ url: string; alt: string } | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showProfileMenu] = useState(false);
   const [profile] = useState<ProfileInfo>({
-    imageUrl: '/default-avatar.png',
-    name: 'User Name',
-    email: 'user@example.com'
+    imageUrl: "/default-avatar.png",
+    name: "User Name",
+    email: "user@example.com",
   });
 
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  const getGlassStyle = isDarkMode ? 'glass-base-dark' : 'glass-base-light';
-  const getGlassMessage = isDarkMode ? 'glass-message-dark' : 'glass-message-light';
+  const getGlassStyle = isDarkMode ? "glass-base-dark" : "glass-base-light";
+  const getGlassMessage = isDarkMode ? "glass-message-dark" : "glass-message-light";
   const [hasFocused, setHasFocused] = useState(false);
 
   // Photo upload handler
@@ -62,11 +68,11 @@ export default function FrostScript() {
 
     try {
       const formData = new FormData();
-      formData.append('photo', file);
+      formData.append("photo", file);
 
-      const response = await fetch('/api/upload-photo', {
-        method: 'POST',
-        body: formData
+      const response = await fetch("/api/upload-photo", {
+        method: "POST",
+        body: formData,
       });
 
       const data = await response.json();
@@ -74,15 +80,15 @@ export default function FrostScript() {
         const newMessage: Message = {
           id: crypto.randomUUID(),
           content: `Uploaded photo: ${file.name}`,
-          role: 'user',
+          role: "user",
           timestamp: new Date().toISOString(),
           imageUrl: data.url,
-          imageAlt: file.name
+          imageAlt: file.name,
         };
         setMessages((prev) => [...prev, newMessage]);
       }
     } catch (error) {
-      console.error('Error uploading photo:', error);
+      console.error("Error uploading photo:", error);
     }
   }
 
@@ -92,7 +98,7 @@ export default function FrostScript() {
       const blob = await imageCache.getOrFetch(url);
       await saveToDevice(blob, filename || `image-${Date.now()}.png`);
     } catch (error) {
-      console.error('Error downloading image:', error);
+      console.error("Error downloading image:", error);
     }
   };
 
@@ -100,11 +106,11 @@ export default function FrostScript() {
     if (isListening) return;
 
     try {
-      const response = await fetch('/api/speech-token');
+      const response = await fetch("/api/speech-token");
       const { token, region } = await response.json();
 
       const speechConfig = sdk.SpeechConfig.fromAuthorizationToken(token, region);
-      speechConfig.speechRecognitionLanguage = 'en-US';
+      speechConfig.speechRecognitionLanguage = "en-US";
       speechConfig.speechSynthesisVoiceName = "en-US-JennyNeural";
 
       const audioConfig = sdk.AudioConfig.fromDefaultSpeakerOutput();
@@ -138,31 +144,28 @@ export default function FrostScript() {
     const newMessage: Message = {
       id: crypto.randomUUID(),
       content: text,
-      role: 'user',
-      timestamp: new Date().toISOString()
+      role: "user",
+      timestamp: new Date().toISOString(),
     };
 
-    // Optimistically add the user's message.
+    // Add the user's message optimistically.
     setMessages((prev) => [...prev, newMessage]);
-
-    setMessage('');
+    setMessage("");
     setIsLoading(true);
 
     try {
       setShowVoiceInterface(true);
 
       const isImageGenerationRequest = text.toLowerCase().match(
-        /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|a|some)? ?(?:image|picture|photo|painting|digital|illustration|artwork|drawing)/i
+        /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|some)? ?(?:image|picture|photo|illustration|artwork|drawing)/i
       );
 
       if (isImageGenerationRequest) {
         setIsGeneratingImage(true);
-        const imageResponse = await fetch('/api/generate-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ prompt: text })
+        const imageResponse = await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: text }),
         });
 
         const imageData = await imageResponse.json();
@@ -171,10 +174,10 @@ export default function FrostScript() {
           const assistantMessage: Message = {
             id: crypto.randomUUID(),
             content: `Generated image for: "${text}"`,
-            role: 'assistant',
+            role: "assistant",
             timestamp: new Date().toISOString(),
             imageUrl: imageData.imageUrl,
-            imageAlt: text
+            imageAlt: text,
           };
           setMessages((prev) => [...prev, assistantMessage]);
 
@@ -182,25 +185,18 @@ export default function FrostScript() {
           await new Promise((resolve, reject) => {
             synthesizer.speakTextAsync(
               "I've generated the image you requested.",
-              (result) => {
-                if (result.errorDetails) {
-                  reject(result.errorDetails);
-                } else {
-                  resolve(result);
-                }
-              },
+              (result) =>
+                result.errorDetails ? reject(result.errorDetails) : resolve(result),
               (error) => reject(error)
             );
           });
         }
         setIsGeneratingImage(false);
       } else {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ message: text })
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: text }),
         });
 
         const data = await response.json();
@@ -208,47 +204,36 @@ export default function FrostScript() {
         const assistantMessage: Message = {
           id: crypto.randomUUID(),
           content: data.response,
-          role: 'assistant',
-          timestamp: new Date().toISOString()
+          role: "assistant",
+          timestamp: new Date().toISOString(),
         };
 
         setMessages((prev) => [...prev, assistantMessage]);
-
         setIsSpeaking(true);
         setIsListening(false);
 
         await new Promise((resolve, reject) => {
           synthesizer.speakTextAsync(
             data.response,
-            (result) => {
-              if (result.errorDetails) {
-                console.error('Speech synthesis error:', result.errorDetails);
-                reject(result.errorDetails);
-              } else {
-                resolve(result);
-              }
-            },
-            (error) => {
-              console.error('Speech synthesis error:', error);
-              reject(error);
-            }
+            (result) =>
+              result.errorDetails ? reject(result.errorDetails) : resolve(result),
+            (error) => reject(error)
           );
         });
       }
 
       setIsSpeaking(false);
 
+      // Wait a moment and then restart recognition.
       await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const tokenResponse = await fetch('/api/speech-token');
+      const tokenResponse = await fetch("/api/speech-token");
       const { token: newToken, region: newRegion } = await tokenResponse.json();
 
       const newSpeechConfig = sdk.SpeechConfig.fromAuthorizationToken(newToken, newRegion);
-      newSpeechConfig.speechRecognitionLanguage = 'en-US';
+      newSpeechConfig.speechRecognitionLanguage = "en-US";
       const recognizer = new sdk.SpeechRecognizer(newSpeechConfig);
 
       setIsListening(true);
-
       recognizer.recognizeOnceAsync(async (result) => {
         if (result.text) {
           await handleVoiceMessage(result.text, synthesizer);
@@ -258,9 +243,9 @@ export default function FrostScript() {
         recognizer.close();
       });
     } catch (error) {
-      console.error('Error in voice interaction:', error);
-      // Remove the user message if an error occurs.
+      console.error("Error in voice interaction:", error);
       setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+      setIsGeneratingImage(false); // Reset in case of an error.
       setIsSpeaking(false);
       setIsListening(false);
     } finally {
@@ -270,39 +255,31 @@ export default function FrostScript() {
 
   async function handleFileUpload(event: React.ChangeEvent<HTMLInputElement>) {
     if (!event.target.files?.length) return;
-
     const files = Array.from(event.target.files);
     setIsLoading(true);
 
     try {
       const formData = new FormData();
-      files.forEach((file) => formData.append('files', file));
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData
-      });
-
+      files.forEach((file) => formData.append("files", file));
+      const response = await fetch("/api/upload", { method: "POST", body: formData });
       const data = await response.json();
 
       const newFiles = data.files.map((file: FileResponse) => ({
         ...file,
         id: crypto.randomUUID(),
-        type: 'document'
+        type: "document",
       }));
 
       setUploadedFiles((prev) => [...prev, ...newFiles]);
-
       const systemMessage: Message = {
         id: crypto.randomUUID(),
-        content: `Files uploaded: ${files.map((f) => f.name).join(', ')}`,
-        role: 'assistant',
-        timestamp: new Date().toISOString()
+        content: `Files uploaded: ${files.map((f) => f.name).join(", ")}`,
+        role: "assistant",
+        timestamp: new Date().toISOString(),
       };
-
       setMessages((prev) => [...prev, systemMessage]);
     } catch (error) {
-      console.error('Error uploading files:', error);
+      console.error("Error uploading files:", error);
     } finally {
       setIsLoading(false);
     }
@@ -314,13 +291,12 @@ export default function FrostScript() {
     const newMessage: Message = {
       id: crypto.randomUUID(),
       content: message,
-      role: 'user',
-      timestamp: new Date().toISOString()
+      role: "user",
+      timestamp: new Date().toISOString(),
     };
 
-    // Add the user message immediately.
     setMessages((prev) => [...prev, newMessage]);
-    setMessage('');
+    setMessage("");
     setIsLoading(true);
 
     try {
@@ -330,53 +306,45 @@ export default function FrostScript() {
 
       if (isImageGenerationRequest) {
         setIsGeneratingImage(true);
-        const imageResponse = await fetch('/api/generate-image', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ prompt: message })
+        const imageResponse = await fetch("/api/generate-image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: message }),
         });
 
         const imageData = await imageResponse.json();
-
         if (imageData.imageUrl) {
           const assistantMessage: Message = {
             id: crypto.randomUUID(),
             content: `Generated image for: "${message}"`,
-            role: 'assistant',
+            role: "assistant",
             timestamp: new Date().toISOString(),
             imageUrl: imageData.imageUrl,
-            imageAlt: message
+            imageAlt: message,
           };
           setMessages((prev) => [...prev, assistantMessage]);
         }
         setIsGeneratingImage(false);
       } else {
-        const response = await fetch('/api/chat', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ message: newMessage.content })
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: newMessage.content }),
         });
 
         const data = await response.json();
-
         const assistantMessage: Message = {
           id: crypto.randomUUID(),
           content: data.response,
-          role: 'assistant',
-          timestamp: new Date().toISOString()
+          role: "assistant",
+          timestamp: new Date().toISOString(),
         };
-
         setMessages((prev) => [...prev, assistantMessage]);
       }
     } catch (error) {
-      console.error('Error processing message:', error);
-      setMessages((prev) =>
-        prev.filter((msg) => msg.id !== newMessage.id)
-      );
+      console.error("Error processing message:", error);
+      setMessages((prev) => prev.filter((msg) => msg.id !== newMessage.id));
+      setIsGeneratingImage(false); // Reset in case of an error.
     } finally {
       setIsLoading(false);
     }
@@ -399,24 +367,24 @@ export default function FrostScript() {
   return (
     <div
       className={`min-h-screen relative overflow-hidden ${
-        isDarkMode ? 'gradient-dark text-gray-100' : 'gradient-light text-gray-800'
+        isDarkMode ? "gradient-dark text-gray-100" : "gradient-light text-gray-800"
       } transition-colors duration-500`}
     >
       {/* Background Effects */}
       <div className="fixed inset-0 pointer-events-none">
         <div
           className={`absolute top-0 left-1/4 w-96 h-96 rounded-full ${
-            isDarkMode ? 'bg-purple-600/20' : 'bg-purple-400/30'
+            isDarkMode ? "bg-purple-600/20" : "bg-purple-400/30"
           } blur-3xl animate-pulse`}
         />
         <div
           className={`absolute bottom-1/4 right-0 w-96 h-96 rounded-full ${
-            isDarkMode ? 'bg-blue-600/20' : 'bg-blue-400/30'
+            isDarkMode ? "bg-blue-600/20" : "bg-blue-400/30"
           } blur-3xl animate-pulse delay-700`}
         />
         <div
           className={`absolute top-1/2 left-1/2 w-96 h-96 rounded-full ${
-            isDarkMode ? 'bg-indigo-600/20' : 'bg-pink-400/30'
+            isDarkMode ? "bg-indigo-600/20" : "bg-pink-400/30"
           } blur-3xl animate-pulse delay-1000 -translate-x-1/2 -translate-y-1/2`}
         />
       </div>
@@ -427,19 +395,19 @@ export default function FrostScript() {
           <div className="flex flex-nowrap justify-between items-center gap-4">
             {/* Logo Section */}
             <div className="flex items-center gap-3 group">
-              <div
-                className={`$ transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
-              >
+              <div className="p-3 rounded-xl transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12">
                 <FaConnectdevelop
-                  className={`w-12 h-12 transition-colors duration-300 ${
+                  className={`w-14 h-14 transition-colors duration-300 ${
                     isDarkMode
-                      ? 'text-indigo-400 group-hover:text-indigo-600'
-                      : 'text-indigo-600 group-hover:text-indigo-700'
+                      ? "text-indigo-600 group-hover:text-purple-700"
+                      : "text-indigo-600 group-hover:text-purple-700"
                   }`}
                 />
               </div>
-              <h1 className={`${permanentMarker.className} hidden md:block text-3xl font-extrabold bg-gradient-to-r from-indigo-500 via-purple-800 to-indigo-600 bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-wider`}>
-                Good friend.
+              <h1
+                className={`${permanentMarker.className} hidden md:block text-3xl font-extrabold bg-gradient-to-r from-indigo-600 via-purple-100 to-indigo-600 bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-wider`}
+              >
+                hello friend.
               </h1>
             </div>
 
@@ -481,8 +449,8 @@ export default function FrostScript() {
                 onClick={() => setIsDarkMode(!isDarkMode)}
                 className={`${getGlassStyle} p-2 rounded-xl transform transition-all duration-300 hover:scale-110 hover:rotate-12 ${
                   isDarkMode
-                    ? 'hover:bg-yellow-500/20 hover:text-yellow-300'
-                    : 'hover:bg-blue-500/20 hover:text-blue-600'
+                    ? "hover:bg-yellow-500/20 hover:text-yellow-300"
+                    : "hover:bg-blue-500/20 hover:text-blue-600"
                 }`}
               >
                 {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -538,26 +506,44 @@ export default function FrostScript() {
         ref={chatContainerRef}
         className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 glass-scrollbar"
       >
-        {messages.map((msg) => (
-          <FormattedMessage
-            key={msg.id}
-            content={msg.content}
-            isUser={msg.role === 'user'}
-            imageUrl={msg.imageUrl}
-            imageAlt={msg.imageAlt}
-            onImageClick={(url) => setSelectedImage({ url, alt: msg.imageAlt || 'Image' })}
-            glassStyle={getGlassStyle}
-            messageStyle={getGlassMessage}
-          />
-        ))}
-        {isLoading && (
+        {messages.map((msg) =>
+          msg.role !== "user" ? (
+            <GlowingChatBubble
+              key={msg.id}
+              message={msg}
+              autoGlow={true}
+              onImageClick={(url) =>
+                setSelectedImage({ url, alt: msg.imageAlt || "Image" })
+              }
+              glassStyle={getGlassStyle}
+              messageStyle={getGlassMessage}
+            />
+          ) : (
+            <FormattedMessage
+              key={msg.id}
+              content={msg.content}
+              isUser={true}
+              imageUrl={msg.imageUrl}
+              imageAlt={msg.imageAlt}
+              onImageClick={(url) =>
+                setSelectedImage({ url, alt: msg.imageAlt || "Image" })
+              }
+              glassStyle={getGlassStyle}
+              messageStyle={getGlassMessage}
+            />
+          )
+        )}
+
+        {/* Loading spinners */}
+        {!isGeneratingImage && isLoading && (
           <div className="flex justify-center">
-            <Loader className="w-6 h-6 animate-spin text-blue-400" />
+            <Loader className="w-6 h-6 animate-spin text-blue-500" />
           </div>
         )}
+
         {isGeneratingImage && (
           <div className={`${getGlassStyle} flex flex-col items-center gap-2 p-4 rounded-xl`}>
-            <Loader className="w-8 h-8 animate-spin text-blue-400" />
+            <Loader className="w-8 h-8 animate-spin text-blue-500" />
             <p className="text-sm opacity-70">Generating image...</p>
           </div>
         )}
@@ -568,7 +554,7 @@ export default function FrostScript() {
         <div className="flex gap-2 items-end">
           <button
             className={`${getGlassStyle} p-2 rounded-full glass-hover ${
-              isListening ? 'bg-blue-500/30 text-blue-300' : ''
+              isListening ? "bg-blue-500/30 text-blue-300" : ""
             }`}
             onClick={handleSpeechToText}
             disabled={isListening}
@@ -578,8 +564,8 @@ export default function FrostScript() {
           </button>
 
           <div className="flex-1 relative">
-            {!hasFocused && message === '' && (
-              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 opacity-70 ">
+            {!hasFocused && message === "" && (
+              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 opacity-70">
                 <span className="block md:hidden text-sm">
                   Ask anything or describe an image to generate...
                 </span>
@@ -593,7 +579,7 @@ export default function FrostScript() {
               onChange={(e) => setMessage(e.target.value)}
               onFocus={() => setHasFocused(true)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
+                if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
                   handleSendMessage();
                 }
@@ -631,7 +617,7 @@ export default function FrostScript() {
             {uploadedFiles.map((file) => (
               <li key={file.id} className="text-sm flex items-center justify-between">
                 <span>{file.name}</span>
-                {file.type === 'image' && (
+                {file.type === "image" && (
                   <button
                     onClick={() => handleImageDownload(file.url, file.name)}
                     className={`${getGlassStyle} p-1 rounded-lg glass-hover`}
@@ -677,3 +663,4 @@ export default function FrostScript() {
     </div>
   );
 }
+

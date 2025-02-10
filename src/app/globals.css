@@ -208,3 +208,27 @@ textarea.glass-scrollbar::-webkit-scrollbar-thumb {
     rounded-2xl shadow-2xl z-50
     overflow-hidden;
 }
+
+/* Glowing Effect */
+.glowing-effect {
+  @apply pointer-events-none absolute inset-0 rounded-[inherit] opacity-100 transition-opacity duration-300;
+}
+
+.glowing-effect--blur {
+  @apply blur-[var(--blur)];
+}
+
+.glow {
+  @apply absolute rounded-[inherit];
+}
+
+.glow::after {
+  content: "";
+  @apply absolute rounded-[inherit] inset-[calc(-1*var(--glowingeffect-border-width))] transition-opacity duration-300;
+  border: var(--glowingeffect-border-width) solid transparent;
+  background: var(--gradient);
+  background-attachment: fixed;
+  opacity: var(--active);
+  mask-clip: padding-box, border-box;
+  mask-composite: intersect;
+}
