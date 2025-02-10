@@ -1,5 +1,6 @@
 'use client';
 
+import { Permanent_Marker } from 'next/font/google';
 import React, { useRef, useEffect, useState } from 'react';
 import {
   Mic,
@@ -22,8 +23,13 @@ import { imageCache } from '@/utils/imageCache';
 import { saveToDevice } from '@/utils/imageUtils';
 import type { Message, UploadedFile, FileResponse, ProfileInfo } from '@/types';
 
+const permanentMarker = Permanent_Marker({
+  subsets: ['latin'],
+  weight: '400', // You can adjust the weight if needed.
+});
+
 export default function FrostScript() {
-  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(true);
   const [message, setMessage] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -146,7 +152,7 @@ export default function FrostScript() {
       setShowVoiceInterface(true);
 
       const isImageGenerationRequest = text.toLowerCase().match(
-        /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|some)? ?(?:image|picture|photo|illustration|artwork|drawing)/i
+        /(?:create|generate|draw|make|show me|imagine|picture of|visualize|design) (?:an?|the|a|some)? ?(?:image|picture|photo|painting|digital|illustration|artwork|drawing)/i
       );
 
       if (isImageGenerationRequest) {
@@ -422,7 +428,7 @@ export default function FrostScript() {
             {/* Logo Section */}
             <div className="flex items-center gap-3 group">
               <div
-                className={`${getGlassStyle} p-3 rounded-xl transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
+                className={`$ transform transition-all duration-300 group-hover:scale-110 group-hover:rotate-12`}
               >
                 <FaConnectdevelop
                   className={`w-10 h-10 transition-colors duration-300 ${
@@ -432,7 +438,7 @@ export default function FrostScript() {
                   }`}
                 />
               </div>
-              <h1 className="hidden md:block text-3xl font-extrabold bg-gradient-to-r from-indigo-500 via-purple-800 to-indigo-600 bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-wider">
+              <h1 className={`${permanentMarker.className} hidden md:block text-3xl font-extrabold bg-gradient-to-r from-indigo-500 via-purple-800 to-indigo-600 bg-clip-text text-transparent transition-all duration-300 group-hover:tracking-wider`}>
                 Good friend.
               </h1>
             </div>
@@ -573,7 +579,7 @@ export default function FrostScript() {
 
           <div className="flex-1 relative">
             {!hasFocused && message === '' && (
-              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 opacity-70">
+              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 opacity-70 ">
                 <span className="block md:hidden text-sm">
                   Ask anything or describe an image to generate...
                 </span>
@@ -592,7 +598,7 @@ export default function FrostScript() {
                   handleSendMessage();
                 }
               }}
-              placeholder=""
+              placeholder="Test Text"
               className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto glass-scrollbar"
               rows={1}
               aria-label="Message Input"
