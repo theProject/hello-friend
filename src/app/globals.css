@@ -60,7 +60,7 @@
       transparent 140deg,   /* Controls the the length of the response effect */
       transparent 360deg
     );
-    animation: rotateBorder 60s linear infinite;  /* Controls the speed of the AI response effect */
+    animation: rotateBorder 3s linear infinite;  /* Controls the speed of the AI response effect */
     padding: 2px; /* Border width for the AI response chat bubble glow effect */
   }
 
