@@ -459,8 +459,8 @@ export default function FrostScript() {
                 <FaConnectdevelop
                   className={`w-12 h-12 transition-colors duration-300 ${
                     isDarkMode
-                      ? 'text-indigo-300 group-hover:text-pink-700'
-                      : 'text-indigo-600 group-hover:text-pink-700'
+                      ? 'text-pink-700 group-hover:text-pink-800'
+                      : 'text-pink-700 group-hover:text-pink-800'
                   }`}
                 />
               </div>
