@@ -3,11 +3,29 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom Properties */
-@property --angle {
-  syntax: '<angle>';
-  initial-value: 0deg;
-  inherits: false;
+/* CSS Variable Definitions */
+:root {
+  /* Animation delays for desynchronizing border animations */
+  --delay-0: 0s;
+  --delay-1: 0.5s;
+  --delay-2: 1s;
+  --delay-3: 1.5s;
+  --delay-4: 2s;
+  
+  /* Border animation colors - easy to customize */
+  --border-color-1: theme('colors.fuchsia.400');
+  --border-color-2: theme('colors.amber.400');
+  --border-color-3: theme('colors.emerald.400');
+  --border-color-4: theme('colors.blue.400');
+}
+
+/* Modern browser support for angle animations */
+@supports (background: paint(something)) {
+  @property --angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }
 }
 
 @layer components {
@@ -22,6 +40,7 @@
     shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] transition-all duration-300;
   }
 
+  /* Message-specific glass styles */
   .glass-message-dark {
     @apply bg-gray-800/40 backdrop-blur-md shadow-lg 
     border border-gray-700/30 transition-all duration-300 
@@ -34,39 +53,55 @@
     text-gray-800;
   }
 
-  /* AI Message Border with Tracing Effect */
+  /* AI Message Border Animation */
   .ai-message-border {
     @apply relative;
+    animation-delay: var(--delay-0);
   }
 
-  .ai-message-border::before {
-    content: "";
-    @apply absolute inset-[-2px] rounded-[inherit] z-[-1];
-    -webkit-mask: 
-      linear-gradient(#fff 0 0) content-box, 
-      linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask: 
-      linear-gradient(#fff 0 0) content-box, 
-      linear-gradient(#fff 0 0);
-    mask-composite: exclude;
-    background: conic-gradient(
-      from var(--angle),
-      transparent 0deg,
-      theme('colors.fuchsia.400') 10deg, /* Start color for the AI response glow */
-      theme('colors.amber.400') 45deg,  /* Second color */
-      theme('colors.emerald.400') 80deg,  /* Third color */
-      theme('colors.blue.400') 115deg,   /* End color */
-      transparent 140deg,   /* Controls the the length of the response effect */
-      transparent 360deg
-    );
-    animation: rotateBorder 3s linear infinite;  /* Controls the speed of the AI response effect */
-    padding: 2px; /* Border width for the AI response chat bubble glow effect */
+  /* Safari/iOS fallback */
+  .ai-message-border-fallback {
+    @apply relative border-2 border-blue-400/30;
   }
 
-  .ai-message-border::after {
-    content: "";
-    @apply absolute inset-0 rounded-[inherit] z-[-2];
+  /* Border animation delay classes */
+  .ai-message-border-delay-0 { animation-delay: var(--delay-0); }
+  .ai-message-border-delay-1 { animation-delay: var(--delay-1); }
+  .ai-message-border-delay-2 { animation-delay: var(--delay-2); }
+  .ai-message-border-delay-3 { animation-delay: var(--delay-3); }
+  .ai-message-border-delay-4 { animation-delay: var(--delay-4); }
+
+  /* Modern browser border animation */
+  @supports (background: paint(something)) {
+    .ai-message-border::before {
+      content: "";
+      @apply absolute inset-[-2px] rounded-[inherit] z-[-1];
+      -webkit-mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask: 
+        linear-gradient(#fff 0 0) content-box, 
+        linear-gradient(#fff 0 0);
+      mask-composite: exclude;
+      background: conic-gradient(
+        from var(--angle),
+        transparent 0deg,
+        var(--border-color-1) 10deg,
+        var(--border-color-2) 45deg,
+        var(--border-color-3) 80deg,
+        var(--border-color-4) 115deg,
+        transparent 140deg,
+        transparent 360deg
+      );
+      animation: rotateBorder 3s linear infinite;
+      padding: 2px;
+    }
+
+    .ai-message-border::after {
+      content: "";
+      @apply absolute inset-0 rounded-[inherit] z-[-2];
+    }
   }
 
   /* Gradient Backgrounds */
@@ -103,12 +138,8 @@
 
 /* Animation Keyframes */
 @keyframes rotateBorder {
-  from {
-    --angle: 0deg;
-  }
-  to {
-    --angle: 360deg;
-  }
+  from { --angle: 0deg; }
+  to { --angle: 360deg; }
 }
 
 @keyframes gradientRotate {
@@ -186,7 +217,7 @@
   @apply ml-4;
 }
 
-/* Scrollbar Styling */
+/* Custom Scrollbar */
 .glass-scrollbar {
   scrollbar-width: thin;
   scrollbar-color: rgba(255, 255, 255, 0.2) transparent;

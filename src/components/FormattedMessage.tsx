@@ -1,28 +1,28 @@
-import React, { ReactNode } from 'react';
+import React, { ReactNode, useMemo } from 'react';
 import ReactMarkdown, { Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import Image from 'next/image';
 import CodeBlock from './CodeBlock';
 
-// Type definitions for component props
+// Define all component props types
 interface FormattedMessageProps {
-  content: string;      // The message content to display
-  isUser: boolean;      // Whether this is a user message (true) or AI message (false)
-  imageUrl?: string;    // Optional URL for attached images
-  imageAlt?: string;    // Optional alt text for images
-  onImageClick?: (url: string) => void;  // Optional image click handler
-  glassStyle?: string;  // Glass effect style class
-  messageStyle?: string; // Message-specific style class
+  content: string;      // Message content
+  isUser: boolean;      // Determines if message is from user or AI
+  imageUrl?: string;    // Optional image URL
+  imageAlt?: string;    // Optional image alt text
+  onImageClick?: (url: string) => void;  // Image click handler
+  glassStyle?: string;  // Glass effect class
+  messageStyle?: string; // Message style class
 }
 
-// Types for markdown component props
+// Markdown component props
 interface MarkdownComponentProps {
   children?: ReactNode;
   className?: string;
   ordered?: boolean;
 }
 
-// Types for code block props
+// Code block props
 interface CodeProps extends React.HTMLAttributes<HTMLElement> {
   inline?: boolean;
   className?: string;
@@ -35,12 +35,32 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
   imageUrl,
   imageAlt,
   onImageClick,
-  glassStyle = 'glass-base-light',  // Default light mode glass style
-  messageStyle = 'glass-message-light', // Default light mode message style
+  glassStyle = 'glass-base-light',
+  messageStyle = 'glass-message-light',
 }) => {
-  // Custom components for markdown rendering
+  // Generate random delay class for border animation
+  const randomDelay = useMemo(() => {
+    const delays = [
+      'ai-message-border-delay-0',
+      'ai-message-border-delay-1',
+      'ai-message-border-delay-2',
+      'ai-message-border-delay-3',
+      'ai-message-border-delay-4'
+    ];
+    return delays[Math.floor(Math.random() * delays.length)];
+  }, []);
+
+  // Check for Safari/iOS
+  const isSafari = useMemo(() => {
+    if (typeof window !== 'undefined') {
+      return /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    }
+    return false;
+  }, []);
+
+  // Configure markdown components
   const components: Partial<Components> = {
-    // Handle code blocks and inline code
+    // Handle code blocks with syntax highlighting
     code({ inline, className, children, ...props }: CodeProps) {
       if (inline) {
         return (
@@ -51,15 +71,14 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
             {children}
           </code>
         );
-      } else {
-        return (
-          <div className="my-2">
-            <CodeBlock className={`${glassStyle} backdrop-blur-md ${className}`}>
-              {String(children).replace(/\n$/, '')}
-            </CodeBlock>
-          </div>
-        );
       }
+      return (
+        <div className="my-2">
+          <CodeBlock className={`${glassStyle} backdrop-blur-md ${className}`}>
+            {String(children).replace(/\n$/, '')}
+          </CodeBlock>
+        </div>
+      );
     },
     // Heading styles
     h1: ({ children }: MarkdownComponentProps) => (
@@ -86,7 +105,6 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
         </ListWrapper>
       );
     },
-    // Paragraph wrapper
     p: ({ children }: MarkdownComponentProps) => (
       <div className="mb-2">{children}</div>
     ),
@@ -97,15 +115,12 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
       className={`mb-4 backdrop-blur-lg rounded-2xl transform transition-all duration-300
         ${isUser ? 'ml-auto' : 'mr-auto'} max-w-[80%] 
         ${isUser 
-          // User message styling
           ? `${messageStyle} rounded-tr-none hover:-translate-y-1 hover:-rotate-1` 
-          // AI message styling with animated border
-          : `${messageStyle} rounded-tl-none hover:-translate-y-1 hover:rotate-1 ai-message-border`}
+          : `${messageStyle} rounded-tl-none hover:-translate-y-1 hover:rotate-1 
+             ${!isSafari ? `ai-message-border ${randomDelay}` : 'ai-message-border-fallback'}`}
         animate-fade-scale`}
     >
-      {/* Content wrapper with padding */}
       <div className="p-4">
-        {/* Markdown content renderer */}
         <ReactMarkdown 
           remarkPlugins={[remarkGfm]} 
           components={components}
@@ -114,7 +129,7 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
           {content}
         </ReactMarkdown>
         
-        {/* Optional image display */}
+        {/* Image display with glass effect */}
         {imageUrl && (
           <div
             className={`relative mt-4 w-full overflow-hidden rounded-xl cursor-pointer
