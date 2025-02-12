@@ -1,7 +1,7 @@
-// tailwind.config.ts
 import type { Config } from 'tailwindcss'
 
 const config: Config = {
+  darkMode: 'class', // Enable dark mode via a class on the root element (e.g., <html class="dark">)
   content: [
     './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
@@ -9,17 +9,16 @@ const config: Config = {
   ],
   theme: {
     extend: {
-      colors: {
-        'neumorphic-light': '#e0e5ec',
-        'neumorphic-dark': '#1a1a1a',
-      },
-      boxShadow: {
-        'neumorphic-light': '5px 5px 10px #a3b1c6, -5px -5px 10px #ffffff',
-        'neumorphic-dark': '5px 5px 10px #0d0d0d, -5px -5px 10px #272727',
-      },
+      // Remove neumorphic colors and shadows.
+      // If desired, you can add custom glass or gradient colors here.
+      // For example:
+      // colors: {
+      //   'glass-light': 'rgba(255, 255, 255, 0.3)',
+      //   'glass-dark': 'rgba(31,41,55,0.25)',
+      // },
     },
   },
   plugins: [],
 }
 
-export default config
+export default config;

@@ -2,9 +2,17 @@ import type { NextConfig } from 'next';
 
 const config: NextConfig = {
   images: {
-    domains: [
-      'dalleproduse.blob.core.windows.net',
-      'featherblob.blob.core.windows.net'
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'dalleproduse.blob.core.windows.net',
+        pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'featherblob.blob.core.windows.net',
+        pathname: '/**',
+      },
     ],
   },
   webpack: (config, { isServer }) => {

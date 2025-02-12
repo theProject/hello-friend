@@ -3,24 +3,14 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer components {
-  /* Existing Neumorphic Styles */
-  .neumorphic-light {
-    @apply bg-[#e0e5ec] shadow-[5px_5px_10px_#a3b1c6,-5px_-5px_10px_#ffffff] rounded-2xl p-5 transition-all duration-300;
-  }
-  
-  .neumorphic-light-inset {
-    @apply bg-[#e0e5ec] shadow-[inset_5px_5px_10px_#a3b1c6,inset_-5px_-5px_10px_#ffffff] rounded-2xl p-5 transition-all duration-300;
-  }
-  
-  .neumorphic-dark {
-    @apply bg-[#1a1a1a] shadow-[5px_5px_10px_#0d0d0d,-5px_-5px_10px_#272727] rounded-2xl p-5 transition-all duration-300;
-  }
-  
-  .neumorphic-dark-inset {
-    @apply bg-[#1a1a1a] shadow-[inset_5px_5px_10px_#0d0d0d,inset_-5px_-5px_10px_#272727] rounded-2xl p-5 transition-all duration-300;
-  }
+/* Custom Properties */
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
 
+@layer components {
   /* Glassmorphism Base Styles */
   .glass-base-dark {
     @apply bg-gray-800/25 backdrop-blur-lg border border-gray-700/50 text-gray-100 
@@ -33,11 +23,50 @@
   }
 
   .glass-message-dark {
-    @apply bg-gray-800/40 backdrop-blur-md shadow-lg border border-gray-700/30 transition-all duration-300;
+    @apply bg-gray-800/40 backdrop-blur-md shadow-lg 
+    border border-gray-700/30 transition-all duration-300 
+    text-gray-100;
   }
 
   .glass-message-light {
-    @apply bg-white/50 backdrop-blur-md shadow-xl border border-white/20 transition-all duration-300;
+    @apply bg-white/50 backdrop-blur-md shadow-xl 
+    border border-white/20 transition-all duration-300 
+    text-gray-800;
+  }
+
+  /* AI Message Border with Tracing Effect */
+  .ai-message-border {
+    @apply relative;
+  }
+
+  .ai-message-border::before {
+    content: "";
+    @apply absolute inset-[-2px] rounded-[inherit] z-[-1];
+    -webkit-mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: 
+      linear-gradient(#fff 0 0) content-box, 
+      linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    background: conic-gradient(
+      from var(--angle),
+      transparent 0deg,
+      theme('colors.fuchsia.400') 10deg, /* Start color for the AI response glow */
+      theme('colors.amber.400') 45deg,  /* Second color */
+      theme('colors.emerald.400') 80deg,  /* Third color */
+      theme('colors.blue.400') 115deg,   /* End color */
+      transparent 140deg,   /* Controls the the length of the response effect */
+      transparent 360deg
+    );
+    animation: rotateBorder 60s linear infinite;  /* Controls the speed of the AI response effect */
+    padding: 2px; /* Border width for the AI response chat bubble glow effect */
+  }
+
+  .ai-message-border::after {
+    content: "";
+    @apply absolute inset-0 rounded-[inherit] z-[-2];
   }
 
   /* Gradient Backgrounds */
@@ -63,7 +92,25 @@
   }
 }
 
+/* Theme-specific styles */
+:root[data-theme='light'] .ai-message-border::after {
+  @apply bg-white/50;
+}
+
+:root[data-theme='dark'] .ai-message-border::after {
+  @apply bg-gray-800/40;
+}
+
 /* Animation Keyframes */
+@keyframes rotateBorder {
+  from {
+    --angle: 0deg;
+  }
+  to {
+    --angle: 360deg;
+  }
+}
+
 @keyframes gradientRotate {
   0% { background-position: 0% 50%; }
   50% { background-position: 100% 50%; }
@@ -195,40 +242,15 @@ textarea.glass-scrollbar::-webkit-scrollbar-thumb {
   object-fit: contain;
 }
 
-/* Glass Modal Backdrop */
+/* Glass Modal Styles */
 .glass-modal-backdrop {
   @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50;
 }
 
-/* Glass Modal Content */
 .glass-modal-content {
   @apply fixed inset-10 md:inset-20 lg:inset-32 
     bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl
     border border-white/20 dark:border-gray-700/30
     rounded-2xl shadow-2xl z-50
     overflow-hidden;
-}
-
-/* Glowing Effect */
-.glowing-effect {
-  @apply pointer-events-none absolute inset-0 rounded-[inherit] opacity-100 transition-opacity duration-300;
-}
-
-.glowing-effect--blur {
-  @apply blur-[var(--blur)];
-}
-
-.glow {
-  @apply absolute rounded-[inherit];
-}
-
-.glow::after {
-  content: "";
-  @apply absolute rounded-[inherit] inset-[calc(-1*var(--glowingeffect-border-width))] transition-opacity duration-300;
-  border: var(--glowingeffect-border-width) solid transparent;
-  background: var(--gradient);
-  background-attachment: fixed;
-  opacity: var(--active);
-  mask-clip: padding-box, border-box;
-  mask-composite: intersect;
 }
