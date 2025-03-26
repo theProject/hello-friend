@@ -24,17 +24,34 @@ export async function POST(request: Request) {
     );
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
+      let errorData: unknown;
+      try {
+        errorData = await response.json();
+      } catch {
+        errorData = await response.text();
+      }
+
       console.error('Azure OpenAI API error details:', errorData);
-      throw new Error(`Azure OpenAI API error: ${response.statusText}`);
+      return NextResponse.json(
+        { error: 'Azure OpenAI API error', details: errorData },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
     return NextResponse.json({ imageUrl: data.data[0].url });
-  } catch (error) {
-    console.error('Error generating image:', error);
+
+  } catch (error: unknown) {
+    let errorMessage = 'Unknown error occurred';
+    if (error instanceof Error) {
+      errorMessage = error.message;
+      console.error('Error generating image:', error.message, error.stack);
+    } else {
+      console.error('Error generating image:', error);
+    }
+
     return NextResponse.json(
-      { error: 'Failed to generate image' },
+      { error: 'Failed to generate image', details: errorMessage },
       { status: 500 }
     );
   }
