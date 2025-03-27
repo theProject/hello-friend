@@ -835,7 +835,7 @@ export default function FrostScript() {
           onStop={() => setIsListening(false)}
           glassStyle={getGlassStyle}
           messageStyle={getGlassMessage}
-        />source or picture
+        />
       )}
 
       {/* Image Modal */}
