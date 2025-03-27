@@ -285,3 +285,46 @@ textarea.glass-scrollbar::-webkit-scrollbar-thumb {
     rounded-2xl shadow-2xl z-50
     overflow-hidden;
 }
+
+/* Animation for the glowing border effect */
+@keyframes glowBorder {
+  0% { 
+    background-position: 0% 50%; /* Start animation from the left-center */
+  }
+  50% { 
+    background-position: 100% 50%; /* Move animation to the right-center halfway */
+  }
+  100% { 
+    background-position: 0% 50%; /* Return animation back to left-center */
+  }
+}
+
+/* Main class to apply glowing border effect */
+.glow-border {
+  position: relative; /* Establishes positioning context for pseudo-elements */
+  z-index: 0; /* Ensures element stacking context */
+}
+
+/* Pseudo-element (::before) for creating the blurred animated glow */
+.glow-border::before {
+  content: ''; /* Necessary for pseudo-elements */
+  position: absolute; /* Positions element absolutely within its relative parent */
+  inset: -2px; /* Slightly expands the glow beyond the original border */
+  background: linear-gradient(45deg, cyan, magenta, yellow, cyan, magenta); /* Vibrant multi-colored gradient */
+  background-size: 300% 300%; /* Enlarges gradient to allow animation movement */
+  border-radius: inherit; /* Matches parent border radius */
+  z-index: -1; /* Places glow behind the main element */
+  filter: blur(10px); /* Applies blur to create soft glow effect */
+  opacity: 0.8; /* Slight transparency for subtle glow */
+  animation: glowBorder 5s ease infinite; /* Animates gradient continuously */
+}
+
+/* Pseudo-element (::after) ensures content area remains unaffected by glow */
+.glow-border::after {
+  content: ''; /* Necessary for pseudo-elements */
+  position: absolute; /* Positions directly on top of original element */
+  inset: 0; /* Matches exact size of the original element */
+  background: inherit; /* Copies background from parent for seamless visual */
+  border-radius: inherit; /* Matches parent's border radius exactly */
+  z-index: -1; /* Ensures this element stays beneath content */
+}
