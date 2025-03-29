@@ -48,7 +48,7 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
   }, [isLatestAIMessage]);
 
   const components: Partial<Components> = {
-    code({ inline, className, children, ...props }: CodeProps) {
+    code({ inline, className = '', children, ...props }: CodeProps) {
       if (inline) {
         return (
           <code className={`px-2 py-1 rounded ${glassStyle} backdrop-blur-md`} {...props}>
@@ -56,9 +56,13 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
           </code>
         );
       }
+
+      const languageMatch = /language-(\w+)/.exec(className || '');
+      const lang = languageMatch ? languageMatch[1] : 'tsx';
+
       return (
         <div className="my-2">
-          <CodeBlock className={`${glassStyle} backdrop-blur-md ${className}`}>
+          <CodeBlock className={`language-${lang}`}>
             {String(children).replace(/\n$/, '')}
           </CodeBlock>
         </div>

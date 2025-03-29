@@ -1,0 +1,6 @@
+{
+    "webhint.hints": {
+      "hint-no-inline-styles": "off"
+    }
+  }
+  
