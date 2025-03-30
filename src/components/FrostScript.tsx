@@ -43,7 +43,7 @@ export default function FrostScript() {
     {
       id: crypto.randomUUID(),
       content:
-        "Hello! I'm your personal AI assistant. How can I help you today?",
+        "Hello, Friend - Let's disrupt the world of AI together!",
       role: "assistant",
       timestamp: new Date().toISOString(),
     },
