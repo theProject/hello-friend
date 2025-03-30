@@ -8,8 +8,8 @@ import { useEffect } from 'react'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata = {
-  title: 'FrostScript',
-  description: 'AI that freezes time',
+  title: 'Hello Friend',
+  description: 'AI as a friend, not a service',
 }
 
 export default function RootLayout({ 
