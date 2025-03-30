@@ -1,10 +1,6 @@
 "use client";
 
-import React, {
-  useRef,
-  useEffect,
-  useState,
-} from "react";
+import React, { useRef, useEffect, useState } from "react";
 import {
   Mic,
   Sun,
@@ -20,6 +16,8 @@ import {
   Code,
   BrainCircuit,
   Layers,
+ // History,
+  MessageSquare
 } from "lucide-react";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import FormattedMessage from "./FormattedMessage";
@@ -28,12 +26,7 @@ import ImageModal from "./ImageModal";
 import { imageCache } from "@/utils/imageCache";
 import { saveToDevice } from "@/utils/imageUtils";
 import { sendPrompt } from "@/utils/sendPrompt";
-import type {
-  Message,
-  UploadedFile,
-  FileResponse,
- // ProfileInfo,
-} from "@/types";
+import type { Message, UploadedFile, FileResponse } from "@/types";
 
 /** Type guard for 'AbortError' */
 function isAbortError(err: unknown): boolean {
@@ -49,10 +42,11 @@ export default function FrostScript() {
   const [messages, setMessages] = useState<Message[]>([
     {
       id: crypto.randomUUID(),
-      content: "Hello! I'm your personal AI assistant. How can I help you today?",
+      content:
+        "Hello! I'm your personal AI assistant. How can I help you today?",
       role: "assistant",
       timestamp: new Date().toISOString(),
-    }
+    },
   ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -66,50 +60,47 @@ export default function FrostScript() {
   const [speechSynthesizer, setSpeechSynthesizer] =
     useState<sdk.SpeechSynthesizer | null>(null);
   const [showVoiceInterface, setShowVoiceInterface] = useState(false);
-  // Commented out unused userProfile state
-  // const [userProfile] = useState<ProfileInfo>({
-  //   imageUrl: "/default-avatar.png",
-  //   name: "User Name",
-  //   email: "user@example.com",
-  // });
   const [hasFocused, setHasFocused] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(
     null
   );
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [rightSidebarOpen, setRightSidebarOpen] = useState(false);
   const [dropdownOpen, setDropdownOpen] = useState({
     profile: false,
     images: false,
     documents: false,
   });
 
+  // ---------------------------------
   // Refs
+  // ---------------------------------
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // New styling classes for dark/light mode
+  // ---------------------------------
+  // Helper Functions
+  // ---------------------------------
   const getMessageStyle = (isUser: boolean) => {
     if (isUser) {
-      return 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white';
+      return "bg-gradient-to-br from-cyan-500 to-blue-600 text-white";
     } else {
-      return darkMode 
-        ? 'bg-gray-800 border border-gray-700' 
-        : 'bg-white border border-gray-200';
+      return darkMode
+        ? "bg-gray-800 border border-gray-700"
+        : "bg-white border border-gray-200";
     }
   };
 
-  // ---------------------------------
-  // Effects
-  // ---------------------------------
   useEffect(() => {
     if (chatContainerRef.current) {
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
+      chatContainerRef.current.scrollTop =
+        chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
 
   useEffect(() => {
-    document.body.classList.toggle('dark', darkMode);
+    document.body.classList.toggle("dark", darkMode);
   }, [darkMode]);
 
   useEffect(() => {
@@ -119,9 +110,6 @@ export default function FrostScript() {
     };
   }, [speechSynthesizer]);
 
-  // ---------------------------------
-  // Helper Functions
-  // ---------------------------------
   const toggleDarkMode = () => {
     setDarkMode(!darkMode);
   };
@@ -130,8 +118,13 @@ export default function FrostScript() {
     setSidebarOpen(!sidebarOpen);
   };
 
+  // Add this helper function for the right sidebar toggle
+  const toggleRightSidebar = () => {
+    setRightSidebarOpen(!rightSidebarOpen);
+  };
+
   // Fixing TypeScript error with index signature
-  const toggleDropdown = (name: 'profile' | 'images' | 'documents') => {
+  const toggleDropdown = (name: "profile" | "images" | "documents") => {
     setDropdownOpen({
       ...dropdownOpen,
       [name]: !dropdownOpen[name],
@@ -401,7 +394,11 @@ export default function FrostScript() {
   // ---------------------------------
   const Logo = () => (
     <div className="flex items-center space-x-2">
-      <div className={`relative w-8 h-8 flex items-center justify-center rounded-full ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+      <div
+        className={`relative w-8 h-8 flex items-center justify-center rounded-full ${
+          darkMode ? "bg-gray-800" : "bg-gray-100"
+        }`}
+      >
         <svg viewBox="0 0 40 40" className="w-7 h-7">
           <defs>
             <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -410,21 +407,43 @@ export default function FrostScript() {
             </linearGradient>
           </defs>
           <g>
-            {/* Connected abstract nodes design */}
             <circle cx="15" cy="15" r="5" fill="url(#logoGradient)" />
             <circle cx="25" cy="25" r="5" fill="url(#logoGradient)" />
             <circle cx="25" cy="10" r="3" fill="url(#logoGradient)" />
             <circle cx="10" cy="25" r="3" fill="url(#logoGradient)" />
-            
-            {/* Connection lines */}
-            <line x1="15" y1="15" x2="25" y2="25" stroke="url(#logoGradient)" strokeWidth="1.5" />
-            <line x1="15" y1="15" x2="25" y2="10" stroke="url(#logoGradient)" strokeWidth="1.5" />
-            <line x1="25" y1="25" x2="10" y2="25" stroke="url(#logoGradient)" strokeWidth="1.5" />
+            <line
+              x1="15"
+              y1="15"
+              x2="25"
+              y2="25"
+              stroke="url(#logoGradient)"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="15"
+              y1="15"
+              x2="25"
+              y2="10"
+              stroke="url(#logoGradient)"
+              strokeWidth="1.5"
+            />
+            <line
+              x1="25"
+              y1="25"
+              x2="10"
+              y2="25"
+              stroke="url(#logoGradient)"
+              strokeWidth="1.5"
+            />
           </g>
         </svg>
         <div className="absolute inset-0 rounded-full bg-cyan-500 animate-logo-pulse opacity-20"></div>
       </div>
-      <span className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+      <span
+        className={`font-semibold text-lg ${
+          darkMode ? "text-white" : "text-gray-800"
+        }`}
+      >
         hello, friend
       </span>
     </div>
@@ -434,37 +453,58 @@ export default function FrostScript() {
   // Render
   // ---------------------------------
   return (
-    <div className={`h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'} transition-colors duration-300`}>
+    <div
+      className={`h-screen flex flex-col ${
+        darkMode ? "bg-gray-900 text-gray-100" : "bg-gray-50 text-gray-800"
+      } transition-colors duration-300`}
+    >
       {/* Header */}
-      <header className={`flex items-center justify-between p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+      <header
+        className={`flex items-center justify-between p-4 ${
+          darkMode ? "bg-gray-800" : "bg-white"
+        } border-b ${darkMode ? "border-gray-700" : "border-gray-200"}`}
+      >
         <div className="flex items-center space-x-4">
-          <button 
+          <button
             onClick={toggleSidebar}
-            className={`p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors`}
+            className="p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors"
             aria-label="Toggle sidebar"
           >
             <Menu size={20} />
           </button>
           <Logo />
         </div>
-        
+
         <div className="flex items-center space-x-3">
           {/* Upload Images Button */}
           <div className="relative">
-            <button 
-              onClick={() => toggleDropdown('images')}
-              className={`flex items-center space-x-1 p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${dropdownOpen.images ? 'bg-gray-200 bg-opacity-20' : ''}`}
+            <button
+              onClick={() => toggleDropdown("images")}
+              className={`flex items-center space-x-1 p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${
+                dropdownOpen.images ? "bg-gray-200 bg-opacity-20" : ""
+              }`}
               aria-expanded={dropdownOpen.images}
               aria-haspopup="true"
             >
               <ImageIcon size={18} />
               <span className="hidden sm:inline text-sm">Images</span>
             </button>
-            
+
             {dropdownOpen.images && (
-              <div className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} z-10`}>
+              <div
+                className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${
+                  darkMode
+                    ? "bg-gray-800 border border-gray-700"
+                    : "bg-white border border-gray-200"
+                } z-10`}
+              >
                 <div className="py-1" role="menu" aria-orientation="vertical">
-                  <label className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">
+                  <label
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
                     <input
                       ref={photoInputRef}
                       type="file"
@@ -474,30 +514,67 @@ export default function FrostScript() {
                     />
                     Upload Image
                   </label>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Generate Image</a>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Edit Image</a>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Image Gallery</a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Generate Image
+                  </a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Edit Image
+                  </a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Image Gallery
+                  </a>
                 </div>
               </div>
             )}
           </div>
-          
+
           {/* Upload Documents Button */}
           <div className="relative">
-            <button 
-              onClick={() => toggleDropdown('documents')}
-              className={`flex items-center space-x-1 p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${dropdownOpen.documents ? 'bg-gray-200 bg-opacity-20' : ''}`}
+            <button
+              onClick={() => toggleDropdown("documents")}
+              className={`flex items-center space-x-1 p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${
+                dropdownOpen.documents ? "bg-gray-200 bg-opacity-20" : ""
+              }`}
               aria-expanded={dropdownOpen.documents}
               aria-haspopup="true"
             >
               <FileText size={18} />
               <span className="hidden sm:inline text-sm">Documents</span>
             </button>
-            
+
             {dropdownOpen.documents && (
-              <div className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} z-10`}>
+              <div
+                className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${
+                  darkMode
+                    ? "bg-gray-800 border border-gray-700"
+                    : "bg-white border border-gray-200"
+                } z-10`}
+              >
                 <div className="py-1" role="menu" aria-orientation="vertical">
-                  <label className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">
+                  <label
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
                     <input
                       ref={fileInputRef}
                       type="file"
@@ -508,17 +585,41 @@ export default function FrostScript() {
                     />
                     Upload Document
                   </label>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Analyze Document</a>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Summarize</a>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Document Library</a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Analyze Document
+                  </a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Summarize
+                  </a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Document Library
+                  </a>
                 </div>
               </div>
             )}
           </div>
-          
+
           {/* Toggle Dark Mode */}
-          <button 
-            onClick={toggleDarkMode} 
+          <button
+            onClick={toggleDarkMode}
             className="p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors"
             aria-label="Toggle dark mode"
           >
@@ -528,12 +629,14 @@ export default function FrostScript() {
               <Moon size={20} className="text-gray-600" />
             )}
           </button>
-          
+
           {/* Profile Button */}
           <div className="relative">
-            <button 
-              onClick={() => toggleDropdown('profile')}
-              className={`flex items-center space-x-2 p-1 rounded-full hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${dropdownOpen.profile ? 'bg-gray-200 bg-opacity-20' : ''}`}
+            <button
+              onClick={() => toggleDropdown("profile")}
+              className={`flex items-center space-x-2 p-1 rounded-full hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${
+                dropdownOpen.profile ? "bg-gray-200 bg-opacity-20" : ""
+              }`}
               aria-expanded={dropdownOpen.profile}
               aria-haspopup="true"
             >
@@ -541,99 +644,201 @@ export default function FrostScript() {
                 <User size={16} className="text-white" />
               </div>
             </button>
-            
             {dropdownOpen.profile && (
-              <div className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} z-10`}>
+              <div
+                className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${
+                  darkMode
+                    ? "bg-gray-800 border border-gray-700"
+                    : "bg-white border border-gray-200"
+                } z-10`}
+              >
                 <div className="py-1" role="menu" aria-orientation="vertical">
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Profile Settings</a>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Preferences</a>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">API Keys</a>
-                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Logout</a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Profile Settings
+                  </a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Preferences
+                  </a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    API Keys
+                  </a>
+                  <a
+                    href="#"
+                    className={`block px-4 py-2 text-sm ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                    role="menuitem"
+                  >
+                    Logout
+                  </a>
                 </div>
               </div>
             )}
           </div>
+
+          {/* Right Sidebar Toggle Button */}
+          <button
+            onClick={toggleRightSidebar}
+            className="p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors"
+            aria-label="Toggle history sidebar"
+          >
+            <MessageSquare
+              size={20}
+              className={rightSidebarOpen ? "text-cyan-400" : ""}
+            />
+          </button>
         </div>
       </header>
-      
+
       <div className="flex flex-grow overflow-hidden">
-        {/* Main Content Area - This wrapper now contains only the sidebar and chat messages */}
+        {/* Main Content Area */}
         <div className="flex flex-1 overflow-hidden transition-all duration-300">
-          {/* Sidebar */}
-          <div 
-            className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
-            fixed md:relative z-10 w-64 h-full transition-transform duration-300 ease-in-out 
-            ${darkMode ? 'bg-gray-800 border-r border-gray-700' : 'bg-white border-r border-gray-200'}`}
+          {/* Left Sidebar */}
+          <div
+            className={`${
+              sidebarOpen ? "translate-x-0" : "-translate-x-full"
+            } fixed md:relative z-10 w-64 h-full transition-transform duration-300 ease-in-out ${
+              darkMode ? "bg-gray-800 border-r border-gray-700" : "bg-white border-r border-gray-200"
+            }`}
           >
             <div className="p-4 h-full overflow-y-auto">
               {/* Tools Section */}
               <div className="mb-6">
-                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">Tools</h3>
+                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">
+                  Tools
+                </h3>
                 <ul className="space-y-1">
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <ImageIcon size={16} className="mr-3 text-cyan-500" />
                       <span>Image Edit</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <Code size={16} className="mr-3 text-cyan-500" />
                       <span>Code Genius</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <BrainCircuit size={16} className="mr-3 text-cyan-500" />
                       <span>Branding</span>
                     </a>
                   </li>
                 </ul>
               </div>
-              
+
               {/* Projects Section */}
               <div className="mb-6">
-                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">Projects</h3>
+                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">
+                  Projects
+                </h3>
                 <ul className="space-y-1">
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <Layers size={16} className="mr-3 text-indigo-500" />
                       <span>Website Revamp</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <Layers size={16} className="mr-3 text-indigo-500" />
                       <span>Marketing Campaign</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <Layers size={16} className="mr-3 text-indigo-500" />
                       <span>App Prototype</span>
                     </a>
                   </li>
                 </ul>
               </div>
-              
+
               {/* Recent Chats Section */}
               <div>
-                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">Recent Talks</h3>
+                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">
+                  Recent Talks
+                </h3>
                 <ul className="space-y-1">
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <span className="w-2 h-2 rounded-full bg-cyan-500 mr-3"></span>
                       <span>Design System Setup</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <span className="w-2 h-2 rounded-full bg-cyan-500 mr-3"></span>
                       <span>Content Strategy</span>
                     </a>
                   </li>
                   <li>
-                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                    <a
+                      href="#"
+                      className={`flex items-center p-2 rounded-lg ${
+                        darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                      }`}
+                    >
                       <span className="w-2 h-2 rounded-full bg-cyan-500 mr-3"></span>
                       <span>Tech Stack Discussion</span>
                     </a>
@@ -642,80 +847,218 @@ export default function FrostScript() {
               </div>
             </div>
           </div>
-          
-          {/* Chat Area - Now just contains the messages, not the input */}
+
+          {/* Chat Area */}
           <div className="flex-1 flex flex-col overflow-hidden w-full">
-        
-{/* Messages */}
-<div 
-  ref={chatContainerRef}
-  className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
->
-  {messages.map((msg, i) => {
-    const isAI = msg.role === "assistant";
-    const isLast = i === messages.length - 1;
-    const isLatestAIMessage = isAI && isLast;
-    
-    return (
-      <div key={msg.id || i} className="flex justify-center">
-        <div className="w-full max-w-3xl">
-          <FormattedMessage
-            content={msg.content}
-            isUser={msg.role === "user"}
-            imageUrl={msg.imageUrl}
-            imageAlt={msg.imageAlt}
-            onImageClick={(url) => {
-              setSelectedImage({ url, alt: msg.imageAlt || "Image" });
-            }}
-            glassStyle={darkMode ? 'bg-gray-800' : 'bg-white'}
-            messageStyle={getMessageStyle(msg.role === "user")} 
-            isLatestAIMessage={isLatestAIMessage}
-          />
-        </div>
-      </div>
-    );
-  })}
+            <div
+              ref={chatContainerRef}
+              className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+            >
+              {messages.map((msg, i) => {
+                const isAI = msg.role === "assistant";
+                const isLast = i === messages.length - 1;
+                const isLatestAIMessage = isAI && isLast;
 
-  {/* Typing indicator for normal text */}
-  {!isGeneratingImage && isLoading && (
-    <div className="flex justify-center mt-4">
-      <Loader className="w-6 h-6 animate-spin text-blue-400 mr-2" />
-      <span className="text-sm text-gray-400">Thinking...</span>
-    </div>
-  )}
+                return (
+                  <div key={msg.id || i} className="flex justify-center">
+                    <div className="w-full max-w-3xl">
+                      <FormattedMessage
+                        content={msg.content}
+                        isUser={msg.role === "user"}
+                        imageUrl={msg.imageUrl}
+                        imageAlt={msg.imageAlt}
+                        onImageClick={(url) => {
+                          setSelectedImage({ url, alt: msg.imageAlt || "Image" });
+                        }}
+                        glassStyle={darkMode ? "bg-gray-800" : "bg-white"}
+                        messageStyle={getMessageStyle(msg.role === "user")}
+                        isLatestAIMessage={isLatestAIMessage}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
 
-  {/* Image generation progress */}
-  {isGeneratingImage && (
-    <div className="flex justify-center">
-      <div className={`flex flex-col items-center gap-2 p-4 rounded-xl mt-2 max-w-3xl w-full ${
-        darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
-      }`}>
-        <p className="text-sm opacity-80">Generating image (please wait)...</p>
-        <div className="progress-bar-container">
-          <div className="progress-bar" />
+              {/* Typing indicator for normal text */}
+              {!isGeneratingImage && isLoading && (
+                <div className="flex justify-center mt-4">
+                  <Loader className="w-6 h-6 animate-spin text-blue-400 mr-2" />
+                  <span className="text-sm text-gray-400">Thinking...</span>
+                </div>
+              )}
+
+              {/* Image generation progress */}
+              {isGeneratingImage && (
+                <div className="flex justify-center">
+                  <div
+                    className={`flex flex-col items-center gap-2 p-4 rounded-xl mt-2 max-w-3xl w-full ${
+                      darkMode
+                        ? "bg-gray-800 border border-gray-700"
+                        : "bg-white border border-gray-200"
+                    }`}
+                  >
+                    <p className="text-sm opacity-80">
+                      Generating image (please wait)...
+                    </p>
+                    <div className="progress-bar-container">
+                      <div className="progress-bar" />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
-      </div>
-    </div>
-  )}
-</div>
+
+        {/* Right Sidebar */}
+        <div
+          className={`${
+            rightSidebarOpen ? "translate-x-0" : "translate-x-full"
+          } fixed right-0 md:relative z-10 w-64 h-full transition-transform duration-300 ease-in-out ${
+            darkMode
+              ? "bg-gray-800 border-l border-gray-700"
+              : "bg-white border-l border-gray-200"
+          }`}
+        >
+          <div className="p-4 h-full overflow-y-auto">
+            {/* Recent Conversations Section */}
+            <div>
+              <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">
+                Recent Threads
+              </h3>
+              <ul className="space-y-1">
+                <li>
+                  <a
+                    href="#"
+                    className={`flex items-center p-2 rounded-lg ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-green-500 mr-3"></span>
+                    <span>Active Research Thread</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className={`flex items-center p-2 rounded-lg ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-cyan-500 mr-3"></span>
+                    <span>Creative Writing Session</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className={`flex items-center p-2 rounded-lg ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-yellow-500 mr-3"></span>
+                    <span>Code Debugging Help</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className={`flex items-center p-2 rounded-lg ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-purple-500 mr-3"></span>
+                    <span>Image Generation Ideas</span>
+                  </a>
+                </li>
+                <li>
+                  <a
+                    href="#"
+                    className={`flex items-center p-2 rounded-lg ${
+                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-blue-500 mr-3"></span>
+                    <span>Meeting Notes</span>
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Thread Stats Section */}
+            <div className="mt-6">
+              <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">
+                Thread Stats
+              </h3>
+              <div className={`p-3 rounded-lg ${darkMode ? "bg-gray-700" : "bg-gray-100"}`}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs">Current Thread</span>
+                  <span className="text-xs font-semibold">12 messages</span>
+                </div>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-xs">Images</span>
+                  <span className="text-xs font-semibold">3 created</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-xs">Files</span>
+                  <span className="text-xs font-semibold">2 uploaded</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Context Controls */}
+            <div className="mt-6">
+              <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">
+                Context Controls
+              </h3>
+              <div className="space-y-2">
+                <button
+                  className={`w-full text-left p-2 rounded-lg text-sm ${
+                    darkMode ? "hover:bg-gray-700 bg-gray-700/50" : "hover:bg-gray-100 bg-gray-100/50"
+                  }`}
+                >
+                  Save Current Thread
+                </button>
+                <button
+                  className={`w-full text-left p-2 rounded-lg text-sm ${
+                    darkMode ? "hover:bg-gray-700 bg-gray-700/50" : "hover:bg-gray-100 bg-gray-100/50"
+                  }`}
+                >
+                  Copy Thread Summary
+                </button>
+                <button
+                  className={`w-full text-left p-2 rounded-lg text-sm ${
+                    darkMode ? "hover:bg-gray-700 bg-gray-700/50" : "hover:bg-gray-100 bg-gray-100/50"
+                  }`}
+                >
+                  Clear Context
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      
-     {/* Input Area - Now moved outside of the chat area to make it full width like the header */}
-     <div className={`p-4 border-t ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+
+      {/* Input Area */}
+      <div
+        className={`p-4 border-t ${
+          darkMode ? "bg-gray-800 border-gray-700" : "bg-white border-gray-200"
+        }`}
+      >
         <div className="flex items-center space-x-2">
           {/* Voice Input Button */}
-          <button 
+          <button
             type="button"
-            className={`p-2 rounded-full ${isListening ? 'bg-blue-500/30 text-blue-300' : ''} hover:bg-opacity-10 hover:bg-gray-400 transition-colors text-cyan-500`}
+            className={`p-2 rounded-full ${
+              isListening ? "bg-blue-500/30 text-blue-300" : ""
+            } hover:bg-opacity-10 hover:bg-gray-400 transition-colors text-cyan-500`}
             onClick={handleSpeechToText}
             disabled={isListening}
             aria-label="Voice input"
           >
             <Mic size={20} />
           </button>
-          
+
           <div className="flex-1 relative">
             <textarea
               id="messageInput"
@@ -728,11 +1071,11 @@ export default function FrostScript() {
                   handleSendMessage();
                 }
               }}
-              className={`w-full p-3 pr-10 rounded-full border focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none 
-                ${darkMode 
-                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
-                  : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
-                } custom-scrollbar`}
+              className={`w-full p-3 pr-10 rounded-full border focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none ${
+                darkMode
+                  ? "bg-gray-700 border-gray-600 text-white placeholder-gray-400"
+                  : "bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500"
+              } custom-scrollbar`}
               placeholder=""
               rows={1}
               aria-label="Message Input"
@@ -748,10 +1091,10 @@ export default function FrostScript() {
               </div>
             )}
           </div>
-          
-          <button 
+
+          <button
             type="button"
-            className={`p-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 transition-opacity`}
+            className="p-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 transition-opacity"
             onClick={handleSendMessage}
             disabled={isLoading || !message.trim()}
             aria-label="Send message"
@@ -759,10 +1102,9 @@ export default function FrostScript() {
             <Send size={20} />
           </button>
 
-          {/* Stop Button */}
           {isLoading && abortController && (
             <button
-              className={`p-2 ml-2 rounded-xl hover:bg-opacity-10 hover:bg-gray-400 transition-colors`}
+              className="p-2 ml-2 rounded-xl hover:bg-opacity-10 hover:bg-gray-400 transition-colors"
               onClick={() => abortController.abort()}
               aria-label="Stop current request"
             >
@@ -771,10 +1113,14 @@ export default function FrostScript() {
           )}
         </div>
       </div>
-      
+
       {/* Uploaded Files */}
       {uploadedFiles.length > 0 && (
-        <div className={`p-4 mt-4 rounded-xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} mx-4 mb-4`}>
+        <div
+          className={`p-4 mt-4 rounded-xl ${
+            darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-gray-200"
+          } mx-4 mb-4`}
+        >
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-sm font-semibold">Uploaded Files</h2>
             <button
@@ -791,7 +1137,7 @@ export default function FrostScript() {
                 {file.type === "image" && (
                   <button
                     onClick={() => handleImageDownload(file.url, file.name)}
-                    className={`p-1 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors`}
+                    className="p-1 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors"
                     aria-label="Download file"
                   >
                     <Download className="w-4 h-4" />
@@ -816,8 +1162,10 @@ export default function FrostScript() {
           }}
           onStart={handleSpeechToText}
           onStop={() => setIsListening(false)}
-          glassStyle={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
-          messageStyle={`${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}
+          glassStyle={`${
+            darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-gray-200"
+          }`}
+          messageStyle={`${darkMode ? "bg-gray-700" : "bg-gray-100"}`}
         />
       )}
 
@@ -831,7 +1179,9 @@ export default function FrostScript() {
             selectedImage.url &&
             handleImageDownload(selectedImage.url, "downloaded.png")
           }
-          glassStyle={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
+          glassStyle={`${
+            darkMode ? "bg-gray-800 border border-gray-700" : "bg-white border border-gray-200"
+          }`}
         />
       )}
 
