@@ -1,6 +1,12 @@
 import * as sdk from 'microsoft-cognitiveservices-speech-sdk';
 import type { Message } from '@/types';
 
+/** The shape of the object returned by sendPrompt */
+interface PromptResult {
+  blocked: boolean;
+  message: Message;
+}
+
 function isImagePrompt(prompt: string): boolean {
   const lowered = prompt.toLowerCase();
   const visualHints = [
@@ -38,34 +44,45 @@ function isPolicyBlocked(error: unknown): boolean {
   );
 }
 
-function createMessage(content: string, role: 'user' | 'assistant', overrides?: Partial<Message>): Message {
+function createMessage(content: string, role: 'user' | 'assistant'): Message {
   return {
     id: crypto.randomUUID(),
     content,
     role,
     timestamp: new Date().toISOString(),
-    ...overrides,
   };
 }
 
-async function sendPrompt(
+/**
+ * Let's define a custom type guard for an AbortError.
+ * It's recognized if it's a DOMException named 'AbortError'.
+ */
+function isAbortError(err: unknown): boolean {
+  return err instanceof DOMException && err.name === 'AbortError';
+}
+
+export async function sendPrompt(
   prompt: string,
-  speechSynthesizer: sdk.SpeechSynthesizer | null,
-  setMessages: React.Dispatch<React.SetStateAction<Message[]>>,
-  setIsLoading: (loading: boolean) => void,
-  setIsGeneratingImage: (loading: boolean) => void
-) {
-  const userMessage = createMessage(prompt, 'user');
-  setMessages((prev) => [...prev, userMessage]);
-  setIsLoading(true);
+  speechSynthesizer?: sdk.SpeechSynthesizer | null,
+  setMessages?: React.Dispatch<React.SetStateAction<Message[]>>,
+  setIsLoading?: (loading: boolean) => void,
+  setIsGeneratingImage?: (loading: boolean) => void,
+  signal?: AbortSignal
+): Promise<PromptResult> {
+  let blocked = false;
+  let finalMessage: Message = createMessage('Something went wrong.', 'assistant');
 
   try {
+    if (setIsLoading) setIsLoading(true);
+
     if (isImagePrompt(prompt)) {
-      setIsGeneratingImage(true);
+      if (setIsGeneratingImage) setIsGeneratingImage(true);
+
       const res = await fetch('/api/generate-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ prompt }),
+        signal,
       });
       const data = await res.json();
 
@@ -73,12 +90,9 @@ async function sendPrompt(
         throw new Error('Image generation failed.');
       }
 
-      const imgMessage = createMessage(`Generated image for: "${prompt}"`, 'assistant', {
-        imageUrl: data.imageUrl,
-        imageAlt: prompt,
-      });
-
-      setMessages((prev) => [...prev, imgMessage]);
+      finalMessage = createMessage(`Generated image for: "${prompt}"`, 'assistant');
+      finalMessage.imageUrl = data.imageUrl;
+      finalMessage.imageAlt = prompt;
 
       if (speechSynthesizer) {
         speechSynthesizer.speakTextAsync("Here's the image you asked for.");
@@ -88,6 +102,7 @@ async function sendPrompt(
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: prompt }),
+        signal,
       });
       const data = await res.json();
 
@@ -95,29 +110,33 @@ async function sendPrompt(
         throw new Error('Chat response failed.');
       }
 
-      const assistantMessage = createMessage(data.response, 'assistant');
-      setMessages((prev) => [...prev, assistantMessage]);
+      finalMessage = createMessage(data.response, 'assistant');
 
       if (speechSynthesizer) {
         speechSynthesizer.speakTextAsync(data.response);
       }
     }
   } catch (err) {
-    const fallback = isPolicyBlocked(err)
-      ? "I'm sorry, but that request was blocked by safety filters."
-      : "Something went wrong. Please try again.";
-
-    const errorMessage = createMessage(fallback, 'assistant');
-    setMessages((prev) => [...prev, errorMessage]);
+    if (isPolicyBlocked(err)) {
+      blocked = true;
+      finalMessage = createMessage(
+        "I'm sorry, but that request was blocked by safety filters.",
+        'assistant'
+      );
+    } else if (isAbortError(err)) {
+      blocked = true;
+      finalMessage = createMessage('Request was aborted by the user.', 'assistant');
+    } else {
+      blocked = true;
+      finalMessage = createMessage('Something went wrong. Please try again.', 'assistant');
+    }
   } finally {
-    setIsLoading(false);
-    setIsGeneratingImage(false);
+    if (setIsLoading) setIsLoading(false);
+    if (setIsGeneratingImage) setIsGeneratingImage(false);
   }
-}
 
-export {
-  isImagePrompt,
-  isPolicyBlocked,
-  createMessage,
-  sendPrompt
-};
+  return {
+    blocked,
+    message: finalMessage,
+  };
+}
