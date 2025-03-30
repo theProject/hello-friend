@@ -3,246 +3,45 @@
 @tailwind components;
 @tailwind utilities;
 
-/* CSS Variable Definitions */
 :root {
-  /* Animation delays for desynchronizing border animations */
-  --delay-0: 0s;
-  --delay-1: 0.5s;
-  --delay-2: 1s;
-  --delay-3: 1.5s;
-  --delay-4: 2s;
-  
-  /* Border animation colors - easy to customize */
-  --border-color-1: theme('colors.fuchsia.400');
-  --border-color-2: theme('colors.amber.400');
-  --border-color-3: theme('colors.emerald.400');
-  --border-color-4: theme('colors.blue.400');
+  --foreground-rgb: 0, 0, 0;
+  --background-rgb: 245, 247, 250;
 }
 
-/* Modern browser support for angle animations */
-@supports (background: paint(something)) {
-  @property --angle {
-    syntax: '<angle>';
-    initial-value: 0deg;
-    inherits: false;
-  }
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-rgb: 17, 24, 39;
 }
 
-@layer components {
-  /* Glassmorphism Base Styles */
-  .glass-base-dark {
-    @apply bg-gray-800/25 backdrop-blur-lg border border-gray-700/50 text-gray-100 
-    shadow-[0_8px_32px_0_rgba(0,0,0,0.37)] transition-all duration-300;
-  }
-
-  .glass-base-light {
-    @apply bg-white/30 backdrop-blur-lg border border-white/30 text-gray-800
-    shadow-[0_8px_32px_0_rgba(31,38,135,0.37)] transition-all duration-300;
-  }
-
-  /* Message-specific glass styles */
-  .glass-message-dark {
-    @apply bg-gray-800/40 backdrop-blur-md shadow-lg 
-    border border-gray-700/30 transition-all duration-300 
-    text-gray-100;
-  }
-
-  .glass-message-light {
-    @apply bg-white/50 backdrop-blur-md shadow-xl 
-    border border-white/20 transition-all duration-300 
-    text-gray-800;
-  }
-
-  /* AI Message Border Animation */
-  .ai-message-border {
-    @apply relative;
-    animation-delay: var(--delay-0);
-  }
-
-  /* Safari/iOS fallback */
-  .ai-message-border-fallback {
-    @apply relative border-2 border-blue-400/30;
-  }
-
-  /* Border animation delay classes */
-  .ai-message-border-delay-0 { animation-delay: var(--delay-0); }
-  .ai-message-border-delay-1 { animation-delay: var(--delay-1); }
-  .ai-message-border-delay-2 { animation-delay: var(--delay-2); }
-  .ai-message-border-delay-3 { animation-delay: var(--delay-3); }
-  .ai-message-border-delay-4 { animation-delay: var(--delay-4); }
-
-  /* Modern browser border animation */
-  @supports (background: paint(something)) {
-    .ai-message-border::before {
-      content: "";
-      @apply absolute inset-[-2px] rounded-[inherit] z-[-1];
-      -webkit-mask: 
-        linear-gradient(#fff 0 0) content-box, 
-        linear-gradient(#fff 0 0);
-      -webkit-mask-composite: xor;
-      mask: 
-        linear-gradient(#fff 0 0) content-box, 
-        linear-gradient(#fff 0 0);
-      mask-composite: exclude;
-      background: conic-gradient(
-        from var(--angle),
-        transparent 0deg,
-        var(--border-color-1) 10deg,
-        var(--border-color-2) 45deg,
-        var(--border-color-3) 80deg,
-        var(--border-color-4) 115deg,
-        transparent 140deg,
-        transparent 360deg
-      );
-      animation: rotateBorder 3s linear infinite;
-      padding: 2px;
-    }
-
-    .ai-message-border::after {
-      content: "";
-      @apply absolute inset-0 rounded-[inherit] z-[-2];
-    }
-  }
-
-  /* Gradient Backgrounds */
-  .gradient-dark {
-    @apply bg-gradient-to-br from-gray-900 via-purple-950 to-blue-950;
-  }
-
-  .gradient-light {
-    @apply bg-gradient-to-br from-blue-200 via-purple-100 to-pink-200;
-  }
-
-  /* Interactive Classes */
-  .glass-hover {
-    @apply hover:scale-105 hover:bg-opacity-40 transition-all duration-300;
-  }
-
-  .glass-press {
-    @apply active:scale-95 transition-all duration-150;
-  }
-
-  .glass-rotate-hover {
-    @apply hover:scale-110 hover:rotate-12 transition-all duration-300;
-  }
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-rgb));
 }
 
-/* Theme-specific styles */
-:root[data-theme='light'] .ai-message-border::after {
-  @apply bg-white/50;
-}
-
-:root[data-theme='dark'] .ai-message-border::after {
-  @apply bg-gray-800/40;
-}
-
-/* Animation Keyframes */
-@keyframes rotateBorder {
-  from { --angle: 0deg; }
-  to { --angle: 360deg; }
-}
-
-@keyframes gradientRotate {
-  0% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-  100% { background-position: 0% 50%; }
-}
-
-@keyframes pulseGlow {
-  0% { opacity: 0.2; }
-  50% { opacity: 0.3; }
-  100% { opacity: 0.2; }
-}
-
-@keyframes fadeScale {
-  0% { opacity: 0; transform: scale(0.9); }
-  100% { opacity: 1; transform: scale(1); }
-}
-
-/* Animation Classes */
-.animate-spin-slow {
-  animation: gradientRotate 2s linear infinite;
-}
-
-.animate-pulse-glow {
-  animation: pulseGlow 3s ease-in-out infinite;
-}
-
-.animate-fade-scale {
-  animation: fadeScale 0.3s ease-out forwards;
-}
-
-.delay-75 {
-  animation-delay: 75ms;
-}
-
-.delay-150 {
-  animation-delay: 150ms;
-}
-
-/* Markdown Content */
-.markdown-content {
-  @apply space-y-4;
-}
-
-.markdown-content pre {
-  @apply bg-gray-800/30 backdrop-blur-md rounded-lg p-4 overflow-x-auto border border-gray-700/30;
-}
-
-.markdown-content code {
-  @apply font-mono text-sm;
-}
-
-.markdown-content h1 {
-  @apply text-2xl font-bold mb-4;
-}
-
-.markdown-content h2 {
-  @apply text-xl font-semibold mb-3;
-}
-
-.markdown-content h3 {
-  @apply text-lg font-medium mb-2;
-}
-
-.markdown-content ul {
-  @apply list-disc list-inside;
-}
-
-.markdown-content ol {
-  @apply list-decimal list-inside;
-}
-
-.markdown-content li {
-  @apply ml-4;
-}
-
-/* Custom Scrollbar */
-.glass-scrollbar {
+/* Custom Scrollbar - Preserved from original */
+.custom-scrollbar {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+  scrollbar-color: rgba(125, 125, 125, 0.4) transparent;
 }
 
-.glass-scrollbar::-webkit-scrollbar {
+.custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
 
-.glass-scrollbar::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
-  backdrop-filter: blur(8px);
 }
 
-.glass-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(125, 125, 125, 0.4);
   border-radius: 3px;
-  backdrop-filter: blur(8px);
 }
 
-.glass-scrollbar-dark::-webkit-scrollbar-thumb {
-  background-color: rgba(0, 0, 0, 0.3);
+.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(200, 200, 200, 0.2);
 }
 
-/* Textarea Styles */
+/* Textarea Styles - Preserved from original */
 textarea {
   overflow: hidden;
   resize: none;
@@ -251,80 +50,85 @@ textarea {
   transition: height 0.2s ease;
 }
 
-textarea.glass-scrollbar::-webkit-scrollbar {
-  width: 6px;
+/* Animation Keyframes */
+@keyframes fadeScale {
+  0% { opacity: 0; transform: scale(0.9); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
-textarea.glass-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+@keyframes pulseGlow {
+  0% { opacity: 0.2; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.2; }
 }
 
-textarea.glass-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.2);
-  border-radius: 3px;
+@keyframes logoGlowPulse {
+  0% { opacity: 0.1; }
+  50% { opacity: 0.3; }
+  100% { opacity: 0.1; }
 }
 
-/* Modal Styles */
-.modalImageContainer {
-  height: 90vh;
+/* Animation Classes */
+.animate-fade-scale {
+  animation: fadeScale 0.3s ease-out forwards;
 }
 
-.customObjectContain {
-  object-fit: contain;
+.animate-pulse-glow {
+  animation: pulseGlow 3s ease-in-out infinite;
 }
 
-/* Glass Modal Styles */
-.glass-modal-backdrop {
-  @apply fixed inset-0 bg-black/40 backdrop-blur-sm z-50;
+.animate-logo-pulse {
+  animation: logoGlowPulse 2s ease-in-out infinite;
 }
 
-.glass-modal-content {
-  @apply fixed inset-10 md:inset-20 lg:inset-32 
-    bg-white/10 dark:bg-gray-900/10 backdrop-blur-xl
-    border border-white/20 dark:border-gray-700/30
-    rounded-2xl shadow-2xl z-50
-    overflow-hidden;
+/* AI Message Glow Effect - Preserved from original */
+.ai-message-glow {
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
 }
 
-/* Animation for the glowing border effect */
-@keyframes glowBorder {
-  0% { 
-    background-position: 0% 50%; /* Start animation from the left-center */
-  }
-  50% { 
-    background-position: 100% 50%; /* Move animation to the right-center halfway */
-  }
-  100% { 
-    background-position: 0% 50%; /* Return animation back to left-center */
-  }
+.dark .ai-message-glow {
+  box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
 }
 
-/* Main class to apply glowing border effect */
-.glow-border {
-  position: relative; /* Establishes positioning context for pseudo-elements */
-  z-index: 0; /* Ensures element stacking context */
+/* Utility classes for animation delays */
+.delay-75 {
+  animation-delay: 75ms;
 }
 
-/* Pseudo-element (::before) for creating the blurred animated glow */
-.glow-border::before {
-  content: ''; /* Necessary for pseudo-elements */
-  position: absolute; /* Positions element absolutely within its relative parent */
-  inset: -2px; /* Slightly expands the glow beyond the original border */
-  background: linear-gradient(45deg, cyan, magenta, yellow, cyan, magenta); /* Vibrant multi-colored gradient */
-  background-size: 300% 300%; /* Enlarges gradient to allow animation movement */
-  border-radius: inherit; /* Matches parent border radius */
-  z-index: -1; /* Places glow behind the main element */
-  filter: blur(10px); /* Applies blur to create soft glow effect */
-  opacity: 0.8; /* Slight transparency for subtle glow */
-  animation: glowBorder 5s ease infinite; /* Animates gradient continuously */
+.delay-150 {
+  animation-delay: 150ms;
 }
 
-/* Pseudo-element (::after) ensures content area remains unaffected by glow */
-.glow-border::after {
-  content: ''; /* Necessary for pseudo-elements */
-  position: absolute; /* Positions directly on top of original element */
-  inset: 0; /* Matches exact size of the original element */
-  background: inherit; /* Copies background from parent for seamless visual */
-  border-radius: inherit; /* Matches parent's border radius exactly */
-  z-index: -1; /* Ensures this element stays beneath content */
+.delay-700 {
+  animation-delay: 700ms;
+}
+
+.delay-1000 {
+  animation-delay: 1000ms;
+}
+
+/* Image Modal Styles */
+.modal-image-container {
+  min-height: 300px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* This helps with image display in full-size mode */
+.fullsize-image {
+  max-width: none;
+}
+
+/* For better handling of scrolling within modal */
+.modal-overflow {
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+/* Improved message alignment */
+.message-container {
+  max-width: 768px;
+  margin: 0 auto;
+  width: 100%;
 }

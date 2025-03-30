@@ -9,16 +9,18 @@ import {
   Mic,
   Sun,
   Moon,
-  Upload,
   Send,
   Loader,
   Image as ImageIcon,
   User,
   Download,
   XCircle,
+  Menu,
+  FileText,
+  Code,
+  BrainCircuit,
+  Layers,
 } from "lucide-react";
-import { FaConnectdevelop } from "react-icons/fa6";
-import Image from "next/image";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
 import FormattedMessage from "./FormattedMessage";
 import VoiceInterface from "./VoiceInterface";
@@ -30,7 +32,7 @@ import type {
   Message,
   UploadedFile,
   FileResponse,
-  ProfileInfo,
+ // ProfileInfo,
 } from "@/types";
 
 /** Type guard for 'AbortError' */
@@ -42,9 +44,16 @@ export default function FrostScript() {
   // ---------------------------------
   // State Declarations
   // ---------------------------------
-  const [isDarkMode, setIsDarkMode] = useState(true);
+  const [darkMode, setDarkMode] = useState(true);
   const [message, setMessage] = useState("");
-  const [messages, setMessages] = useState<Message[]>([]);
+  const [messages, setMessages] = useState<Message[]>([
+    {
+      id: crypto.randomUUID(),
+      content: "Hello! I'm your personal AI assistant. How can I help you today?",
+      role: "assistant",
+      timestamp: new Date().toISOString(),
+    }
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [uploadedFiles, setUploadedFiles] = useState<UploadedFile[]>([]);
@@ -57,27 +66,38 @@ export default function FrostScript() {
   const [speechSynthesizer, setSpeechSynthesizer] =
     useState<sdk.SpeechSynthesizer | null>(null);
   const [showVoiceInterface, setShowVoiceInterface] = useState(false);
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const [profile] = useState<ProfileInfo>({
-    imageUrl: "/default-avatar.png",
-    name: "User Name",
-    email: "user@example.com",
-  });
+  // Commented out unused userProfile state
+  // const [userProfile] = useState<ProfileInfo>({
+  //   imageUrl: "/default-avatar.png",
+  //   name: "User Name",
+  //   email: "user@example.com",
+  // });
   const [hasFocused, setHasFocused] = useState(false);
   const [abortController, setAbortController] = useState<AbortController | null>(
     null
   );
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dropdownOpen, setDropdownOpen] = useState({
+    profile: false,
+    images: false,
+    documents: false,
+  });
 
   // Refs
   const chatContainerRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const photoInputRef = useRef<HTMLInputElement>(null);
 
-  // Glass classes
-  const getGlassStyle = isDarkMode ? "glass-base-dark" : "glass-base-light";
-  const getGlassMessage = isDarkMode
-    ? "glass-message-dark"
-    : "glass-message-light";
+  // New styling classes for dark/light mode
+  const getMessageStyle = (isUser: boolean) => {
+    if (isUser) {
+      return 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white';
+    } else {
+      return darkMode 
+        ? 'bg-gray-800 border border-gray-700' 
+        : 'bg-white border border-gray-200';
+    }
+  };
 
   // ---------------------------------
   // Effects
@@ -89,11 +109,34 @@ export default function FrostScript() {
   }, [messages]);
 
   useEffect(() => {
+    document.body.classList.toggle('dark', darkMode);
+  }, [darkMode]);
+
+  useEffect(() => {
     return () => {
       // Clean up the speechSynthesizer
       speechSynthesizer?.close();
     };
   }, [speechSynthesizer]);
+
+  // ---------------------------------
+  // Helper Functions
+  // ---------------------------------
+  const toggleDarkMode = () => {
+    setDarkMode(!darkMode);
+  };
+
+  const toggleSidebar = () => {
+    setSidebarOpen(!sidebarOpen);
+  };
+
+  // Fixing TypeScript error with index signature
+  const toggleDropdown = (name: 'profile' | 'images' | 'documents') => {
+    setDropdownOpen({
+      ...dropdownOpen,
+      [name]: !dropdownOpen[name],
+    });
+  };
 
   // ---------------------------------
   // File & Photo Upload
@@ -354,248 +397,326 @@ export default function FrostScript() {
   }
 
   // ---------------------------------
+  // Logo Component
+  // ---------------------------------
+  const Logo = () => (
+    <div className="flex items-center space-x-2">
+      <div className={`relative w-8 h-8 flex items-center justify-center rounded-full ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
+        <svg viewBox="0 0 40 40" className="w-7 h-7">
+          <defs>
+            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stopColor="#06b6d4" />
+              <stop offset="100%" stopColor="#3b82f6" />
+            </linearGradient>
+          </defs>
+          <g>
+            {/* Connected abstract nodes design */}
+            <circle cx="15" cy="15" r="5" fill="url(#logoGradient)" />
+            <circle cx="25" cy="25" r="5" fill="url(#logoGradient)" />
+            <circle cx="25" cy="10" r="3" fill="url(#logoGradient)" />
+            <circle cx="10" cy="25" r="3" fill="url(#logoGradient)" />
+            
+            {/* Connection lines */}
+            <line x1="15" y1="15" x2="25" y2="25" stroke="url(#logoGradient)" strokeWidth="1.5" />
+            <line x1="15" y1="15" x2="25" y2="10" stroke="url(#logoGradient)" strokeWidth="1.5" />
+            <line x1="25" y1="25" x2="10" y2="25" stroke="url(#logoGradient)" strokeWidth="1.5" />
+          </g>
+        </svg>
+        <div className="absolute inset-0 rounded-full bg-cyan-500 animate-logo-pulse opacity-20"></div>
+      </div>
+      <span className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
+        hello, friend
+      </span>
+    </div>
+  );
+
+  // ---------------------------------
   // Render
   // ---------------------------------
   return (
-    <div
-      className={`min-h-screen relative overflow-hidden ${
-        isDarkMode ? "gradient-dark text-gray-100" : "gradient-light text-gray-800"
-      } transition-colors duration-500`}
-    >
-      {/* Custom CSS, background pulses, etc. */}
-      <style jsx global>{`
-        .progress-bar-container {
-          width: 100%;
-          background-color: rgba(255, 255, 255, 0.1);
-          border-radius: 8px;
-          overflow: hidden;
-          height: 8px;
-        }
-        .progress-bar {
-          width: 50%;
-          height: 8px;
-          background-color: #40e0d0;
-          animation: loading 1s infinite alternate;
-        }
-        @keyframes loading {
-          0% {
-            width: 20%;
-          }
-          100% {
-            width: 90%;
-          }
-        }
-      `}</style>
-
-      {/* Example background pulses */}
-      <div className="fixed inset-0 pointer-events-none">
-        <div
-          className={`absolute top-0 left-1/4 w-96 h-96 rounded-full ${
-            isDarkMode ? "bg-pink-600/30" : "bg-purple-400/30"
-          } blur-3xl animate-pulse`}
-        />
-        <div
-          className={`absolute bottom-1/4 right-0 w-96 h-96 rounded-full ${
-            isDarkMode ? "bg-blue-600/20" : "bg-blue-400/30"
-          } blur-3xl animate-pulse delay-700`}
-        />
-        <div
-          className={`absolute top-1/2 left-1/2 w-96 h-96 rounded-full ${
-            isDarkMode ? "bg-indigo-600/20" : "bg-pink-400/30"
-          } blur-3xl animate-pulse delay-1000 -translate-x-1/2 -translate-y-1/2`}
-        />
-      </div>
-
+    <div className={`h-screen flex flex-col ${darkMode ? 'bg-gray-900 text-gray-100' : 'bg-gray-50 text-gray-800'} transition-colors duration-300`}>
       {/* Header */}
-      <div className="relative mb-8">
-        <div className={`${getGlassMessage} p-4`}>
-          <div className="flex flex-nowrap justify-between items-center gap-4">
-            {/* Logo */}
-            <div className="flex items-center gap-3 group">
-              <div className="transform transition duration-300 group-hover:scale-110 group-hover:rotate-12">
-                <FaConnectdevelop
-                  className={`w-12 h-12 transition-colors duration-300 ${
-                    isDarkMode
-                      ? "text-pink-700 group-hover:text-pink-800"
-                      : "text-pink-700 group-hover:text-pink-800"
-                  }`}
-                />
+      <header className={`flex items-center justify-between p-4 ${darkMode ? 'bg-gray-800' : 'bg-white'} border-b ${darkMode ? 'border-gray-700' : 'border-gray-200'}`}>
+        <div className="flex items-center space-x-4">
+          <button 
+            onClick={toggleSidebar}
+            className={`p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors`}
+            aria-label="Toggle sidebar"
+          >
+            <Menu size={20} />
+          </button>
+          <Logo />
+        </div>
+        
+        <div className="flex items-center space-x-3">
+          {/* Upload Images Button */}
+          <div className="relative">
+            <button 
+              onClick={() => toggleDropdown('images')}
+              className={`flex items-center space-x-1 p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${dropdownOpen.images ? 'bg-gray-200 bg-opacity-20' : ''}`}
+              aria-expanded={dropdownOpen.images}
+              aria-haspopup="true"
+            >
+              <ImageIcon size={18} />
+              <span className="hidden sm:inline text-sm">Images</span>
+            </button>
+            
+            {dropdownOpen.images && (
+              <div className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} z-10`}>
+                <div className="py-1" role="menu" aria-orientation="vertical">
+                  <label className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">
+                    <input
+                      ref={photoInputRef}
+                      type="file"
+                      className="hidden"
+                      onChange={handlePhotoUpload}
+                      accept="image/*"
+                    />
+                    Upload Image
+                  </label>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Generate Image</a>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Edit Image</a>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Image Gallery</a>
+                </div>
               </div>
-              <h1
-                className={`hidden md:block text-2xl ${
-                  isDarkMode
-                    ? "text-indigo-100 group-hover:text-white"
-                    : "text-slate-800 group-hover:text-slate-900"
-                } font-extrabold transition-all duration-300 group-hover:tracking-wider`}
-              >
-                Hello Friend.
-              </h1>
-            </div>
-
-            {/* Utility Buttons */}
-            <div className="flex items-center gap-2">
-              {/* File Upload */}
-              <label className="p-2 transform transition-all duration-300 hover:scale-110 hover:rotate-12 hover:bg-opacity-40">
-                <input
-                  ref={fileInputRef}
-                  type="file"
-                  className="hidden"
-                  multiple
-                  onChange={handleFileUpload}
-                  accept=".pdf,.doc,.docx,.txt"
-                  aria-label="Upload file"
-                />
-                <Upload className="w-5 h-5" />
-              </label>
-
-              {/* Photo Upload */}
-              <label className="p-2 transform transition-all duration-300 hover:scale-110 hover:-rotate-12 hover:bg-opacity-40">
-                <input
-                  ref={photoInputRef}
-                  type="file"
-                  className="hidden"
-                  onChange={handlePhotoUpload}
-                  accept="image/*"
-                  aria-label="Upload photo"
-                />
-                <ImageIcon className="w-5 h-5" />
-              </label>
-
-              {/* Theme Toggle */}
-              <button
-                onClick={() => setIsDarkMode(!isDarkMode)}
-                className={`p-2 transform transition-all duration-300 hover:scale-110 hover:rotate-12 ${
-                  isDarkMode
-                    ? "text-yellow-500 hover:fill-yellow-500/20 hover:text-yellow-300"
-                    : "text-blue-500 hover:fill-blue-500/20 hover:text-blue-600"
-                }`}
-              >
-                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-              </button>
-
-              {/* Profile Menu */}
-              <div className="p-2 relative">
-                <button
-                  onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 transform transition-all duration-300 hover:scale-105"
-                >
-                  {profile.imageUrl ? (
-                    <div className="relative w-8 h-8">
-                      <Image
-                        src={profile.imageUrl}
-                        alt={profile.name}
-                        fill
-                        sizes="32px"
-                        className="rounded-full object-cover border-2 border-blue-400/30"
-                        priority
-                      />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-blue-500/30 backdrop-blur-sm flex items-center justify-center">
-                      <User className="w-5 h-5" />
-                    </div>
-                  )}
-                </button>
-
-                {showProfileMenu && (
-                  <div
-                    className={`${getGlassStyle} absolute right-0 mt-2 w-48 py-2 rounded-xl shadow-xl z-50 animate-fade-scale`}
-                  >
-                    <div className="px-4 py-2 border-b border-gray-200/20">
-                      <p className="text-sm font-semibold">{profile.name}</p>
-                      <p className="text-xs opacity-70">{profile.email}</p>
-                    </div>
-                    <div className="py-1">
-                      <button className="w-full text-left px-4 py-2 text-sm hover:bg-white/10 transition-colors duration-200">
-                        Profile Settings
-                      </button>
-                      <button className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-white/10 transition-colors duration-200">
-                        Sign Out
-                      </button>
-                    </div>
-                  </div>
-                )}
+            )}
+          </div>
+          
+          {/* Upload Documents Button */}
+          <div className="relative">
+            <button 
+              onClick={() => toggleDropdown('documents')}
+              className={`flex items-center space-x-1 p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${dropdownOpen.documents ? 'bg-gray-200 bg-opacity-20' : ''}`}
+              aria-expanded={dropdownOpen.documents}
+              aria-haspopup="true"
+            >
+              <FileText size={18} />
+              <span className="hidden sm:inline text-sm">Documents</span>
+            </button>
+            
+            {dropdownOpen.documents && (
+              <div className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} z-10`}>
+                <div className="py-1" role="menu" aria-orientation="vertical">
+                  <label className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      className="hidden"
+                      multiple
+                      onChange={handleFileUpload}
+                      accept=".pdf,.doc,.docx,.txt"
+                    />
+                    Upload Document
+                  </label>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Analyze Document</a>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Summarize</a>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Document Library</a>
+                </div>
+              </div>
+            )}
+          </div>
+          
+          {/* Toggle Dark Mode */}
+          <button 
+            onClick={toggleDarkMode} 
+            className="p-2 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors"
+            aria-label="Toggle dark mode"
+          >
+            {darkMode ? (
+              <Sun size={20} className="text-yellow-300" />
+            ) : (
+              <Moon size={20} className="text-gray-600" />
+            )}
+          </button>
+          
+          {/* Profile Button */}
+          <div className="relative">
+            <button 
+              onClick={() => toggleDropdown('profile')}
+              className={`flex items-center space-x-2 p-1 rounded-full hover:bg-opacity-10 hover:bg-gray-400 transition-colors ${dropdownOpen.profile ? 'bg-gray-200 bg-opacity-20' : ''}`}
+              aria-expanded={dropdownOpen.profile}
+              aria-haspopup="true"
+            >
+              <div className="w-8 h-8 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-full flex items-center justify-center">
+                <User size={16} className="text-white" />
+              </div>
+            </button>
+            
+            {dropdownOpen.profile && (
+              <div className={`absolute right-0 mt-1 w-48 rounded-md shadow-lg ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} z-10`}>
+                <div className="py-1" role="menu" aria-orientation="vertical">
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Profile Settings</a>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Preferences</a>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">API Keys</a>
+                  <a href="#" className={`block px-4 py-2 text-sm ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`} role="menuitem">Logout</a>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </header>
+      
+      <div className="flex flex-grow overflow-hidden">
+        {/* Main Content Area - This wrapper now contains only the sidebar and chat messages */}
+        <div className="flex flex-1 overflow-hidden transition-all duration-300">
+          {/* Sidebar */}
+          <div 
+            className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} 
+            fixed md:relative z-10 w-64 h-full transition-transform duration-300 ease-in-out 
+            ${darkMode ? 'bg-gray-800 border-r border-gray-700' : 'bg-white border-r border-gray-200'}`}
+          >
+            <div className="p-4 h-full overflow-y-auto">
+              {/* Tools Section */}
+              <div className="mb-6">
+                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">Tools</h3>
+                <ul className="space-y-1">
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <ImageIcon size={16} className="mr-3 text-cyan-500" />
+                      <span>Image Edit</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <Code size={16} className="mr-3 text-cyan-500" />
+                      <span>Code Genius</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <BrainCircuit size={16} className="mr-3 text-cyan-500" />
+                      <span>Branding</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              
+              {/* Projects Section */}
+              <div className="mb-6">
+                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">Projects</h3>
+                <ul className="space-y-1">
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <Layers size={16} className="mr-3 text-indigo-500" />
+                      <span>Website Revamp</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <Layers size={16} className="mr-3 text-indigo-500" />
+                      <span>Marketing Campaign</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <Layers size={16} className="mr-3 text-indigo-500" />
+                      <span>App Prototype</span>
+                    </a>
+                  </li>
+                </ul>
+              </div>
+              
+              {/* Recent Chats Section */}
+              <div>
+                <h3 className="text-xs uppercase tracking-wider mb-3 text-gray-500">Recent Talks</h3>
+                <ul className="space-y-1">
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <span className="w-2 h-2 rounded-full bg-cyan-500 mr-3"></span>
+                      <span>Design System Setup</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <span className="w-2 h-2 rounded-full bg-cyan-500 mr-3"></span>
+                      <span>Content Strategy</span>
+                    </a>
+                  </li>
+                  <li>
+                    <a href="#" className={`flex items-center p-2 rounded-lg ${darkMode ? 'hover:bg-gray-700' : 'hover:bg-gray-100'}`}>
+                      <span className="w-2 h-2 rounded-full bg-cyan-500 mr-3"></span>
+                      <span>Tech Stack Discussion</span>
+                    </a>
+                  </li>
+                </ul>
               </div>
             </div>
+          </div>
+          
+          {/* Chat Area - Now just contains the messages, not the input */}
+          <div className="flex-1 flex flex-col overflow-hidden w-full">
+        
+{/* Messages */}
+<div 
+  ref={chatContainerRef}
+  className="flex-1 overflow-y-auto p-4 space-y-4 custom-scrollbar"
+>
+  {messages.map((msg, i) => {
+    const isAI = msg.role === "assistant";
+    const isLast = i === messages.length - 1;
+    const isLatestAIMessage = isAI && isLast;
+    
+    return (
+      <div key={msg.id || i} className="flex justify-center">
+        <div className="w-full max-w-3xl">
+          <FormattedMessage
+            content={msg.content}
+            isUser={msg.role === "user"}
+            imageUrl={msg.imageUrl}
+            imageAlt={msg.imageAlt}
+            onImageClick={(url) => {
+              setSelectedImage({ url, alt: msg.imageAlt || "Image" });
+            }}
+            glassStyle={darkMode ? 'bg-gray-800' : 'bg-white'}
+            messageStyle={getMessageStyle(msg.role === "user")} 
+            isLatestAIMessage={isLatestAIMessage}
+          />
+        </div>
+      </div>
+    );
+  })}
+
+  {/* Typing indicator for normal text */}
+  {!isGeneratingImage && isLoading && (
+    <div className="flex justify-center mt-4">
+      <Loader className="w-6 h-6 animate-spin text-blue-400 mr-2" />
+      <span className="text-sm text-gray-400">Thinking...</span>
+    </div>
+  )}
+
+  {/* Image generation progress */}
+  {isGeneratingImage && (
+    <div className="flex justify-center">
+      <div className={`flex flex-col items-center gap-2 p-4 rounded-xl mt-2 max-w-3xl w-full ${
+        darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'
+      }`}>
+        <p className="text-sm opacity-80">Generating image (please wait)...</p>
+        <div className="progress-bar-container">
+          <div className="progress-bar" />
+        </div>
+      </div>
+    </div>
+  )}
+</div>
           </div>
         </div>
       </div>
-
-      {/* Chat Area */}
-      <div
-        ref={chatContainerRef}
-        className="mb-4 h-[calc(100vh-12rem)] overflow-y-auto p-4 glass-scrollbar"
-      >
-        {messages.map((msg, i) => {
-          const isAI = msg.role === "assistant";
-          const isLast = i === messages.length - 1;
-          const isLatestAIMessage = isAI && isLast;
-          return (
-            <FormattedMessage
-              key={msg.id}
-              content={msg.content}
-              isUser={msg.role === "user"}
-              imageUrl={msg.imageUrl}
-              imageAlt={msg.imageAlt}
-              onImageClick={(url) => {
-                setSelectedImage({ url, alt: msg.imageAlt || "Image" });
-              }}
-              glassStyle={getGlassStyle}
-              messageStyle={getGlassMessage}
-              isLatestAIMessage={isLatestAIMessage}
-            />
-          );
-        })}
-
-        {/* Typing indicator for normal text */}
-        {!isGeneratingImage && isLoading && (
-          <div className="flex justify-center mt-4">
-            <Loader className="w-6 h-6 animate-spin text-blue-400 mr-2" />
-            <span className="text-sm text-gray-400">Thinking...</span>
-          </div>
-        )}
-
-        {/* Image generation progress */}
-        {isGeneratingImage && (
-          <div className={`${getGlassStyle} flex flex-col items-center gap-2 p-4 rounded-xl mt-2`}>
-            <p className="text-sm opacity-80">Generating image (please wait)...</p>
-            <div className="progress-bar-container">
-              <div className="progress-bar" />
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Input Area */}
-      <div className={`${getGlassMessage} p-4 backdrop-blur-xl`}>
-        <label htmlFor="messageInput" className="sr-only">
-          Message Input
-        </label>
-        <div className="flex gap-2 items-end">
+      
+     {/* Input Area - Now moved outside of the chat area to make it full width like the header */}
+     <div className={`p-4 border-t ${darkMode ? 'bg-gray-800 border-gray-700' : 'bg-white border-gray-200'}`}>
+        <div className="flex items-center space-x-2">
           {/* Voice Input Button */}
-          <button
-            className={`${getGlassStyle} p-2 rounded-full glass-hover ${
-              isListening ? "bg-blue-500/30 text-blue-300" : ""
-            }`}
+          <button 
+            type="button"
+            className={`p-2 rounded-full ${isListening ? 'bg-blue-500/30 text-blue-300' : ''} hover:bg-opacity-10 hover:bg-gray-400 transition-colors text-cyan-500`}
             onClick={handleSpeechToText}
             disabled={isListening}
-            aria-label="Start voice input"
+            aria-label="Voice input"
           >
-            <Mic className="w-6 h-6" />
+            <Mic size={20} />
           </button>
-
-          {/* Textarea for user input */}
+          
           <div className="flex-1 relative">
-            {!hasFocused && message === "" && (
-              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 opacity-70">
-                <span className="block md:hidden text-sm">
-                  Ask anything or describe an image to generate...
-                </span>
-                <span className="hidden md:block">
-                  Hi Friend! Ask me anything, I can even create art!
-                </span>
-              </div>
-            )}
             <textarea
               id="messageInput"
               value={message}
@@ -607,38 +728,53 @@ export default function FrostScript() {
                   handleSendMessage();
                 }
               }}
-              className="w-full bg-transparent border-none outline-none resize-none min-h-[40px] max-h-32 py-2 px-4 h-auto glass-scrollbar"
+              className={`w-full p-3 pr-10 rounded-full border focus:outline-none focus:ring-2 focus:ring-cyan-500 resize-none 
+                ${darkMode 
+                  ? 'bg-gray-700 border-gray-600 text-white placeholder-gray-400' 
+                  : 'bg-gray-50 border-gray-300 text-gray-900 placeholder-gray-500'
+                } custom-scrollbar`}
+              placeholder=""
               rows={1}
               aria-label="Message Input"
             />
+            {!hasFocused && message === "" && (
+              <div className="absolute inset-0 flex items-center pointer-events-none px-4 py-2 opacity-70">
+                <span className="block md:hidden text-sm truncate">
+                  Ask anything...
+                </span>
+                <span className="hidden md:block truncate">
+                  Ask me anything, I can even create art!
+                </span>
+              </div>
+            )}
           </div>
-
-          {/* Send Button */}
-          <button
-            className={`${getGlassStyle} p-2 rounded-xl glass-hover glass-rotate-hover disabled:opacity-50 disabled:cursor-not-allowed`}
+          
+          <button 
+            type="button"
+            className={`p-2 rounded-full bg-gradient-to-r from-cyan-500 to-blue-500 text-white hover:opacity-90 transition-opacity`}
             onClick={handleSendMessage}
             disabled={isLoading || !message.trim()}
             aria-label="Send message"
           >
-            <Send className="w-6 h-6" />
+            <Send size={20} />
           </button>
 
           {/* Stop Button */}
           {isLoading && abortController && (
             <button
-              className={`${getGlassStyle} p-2 ml-2 rounded-xl glass-hover`}
+              className={`p-2 ml-2 rounded-xl hover:bg-opacity-10 hover:bg-gray-400 transition-colors`}
               onClick={() => abortController.abort()}
               aria-label="Stop current request"
             >
-              <XCircle className="w-6 h-6" />
+              <XCircle size={20} />
             </button>
           )}
         </div>
       </div>
-
+      
       {/* Uploaded Files */}
       {uploadedFiles.length > 0 && (
-        <div className={`${getGlassMessage} mt-4 p-4 rounded-xl`}>
+        <div className={`p-4 mt-4 rounded-xl ${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'} mx-4 mb-4`}>
           <div className="flex justify-between items-center mb-2">
             <h2 className="text-sm font-semibold">Uploaded Files</h2>
             <button
@@ -655,7 +791,7 @@ export default function FrostScript() {
                 {file.type === "image" && (
                   <button
                     onClick={() => handleImageDownload(file.url, file.name)}
-                    className={`${getGlassStyle} p-1 rounded-lg glass-hover`}
+                    className={`p-1 rounded-lg hover:bg-opacity-10 hover:bg-gray-400 transition-colors`}
                     aria-label="Download file"
                   >
                     <Download className="w-4 h-4" />
@@ -672,7 +808,7 @@ export default function FrostScript() {
         <VoiceInterface
           isListening={isListening}
           isSpeaking={isSpeaking}
-          isDarkMode={isDarkMode}
+          isDarkMode={darkMode}
           onClose={() => {
             setShowVoiceInterface(false);
             setIsListening(false);
@@ -680,8 +816,8 @@ export default function FrostScript() {
           }}
           onStart={handleSpeechToText}
           onStop={() => setIsListening(false)}
-          glassStyle={getGlassStyle}
-          messageStyle={getGlassMessage}
+          glassStyle={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
+          messageStyle={`${darkMode ? 'bg-gray-700' : 'bg-gray-100'}`}
         />
       )}
 
@@ -695,9 +831,34 @@ export default function FrostScript() {
             selectedImage.url &&
             handleImageDownload(selectedImage.url, "downloaded.png")
           }
-          glassStyle={getGlassStyle}
+          glassStyle={`${darkMode ? 'bg-gray-800 border border-gray-700' : 'bg-white border border-gray-200'}`}
         />
       )}
+
+      {/* Progress bar styles */}
+      <style jsx global>{`
+        .progress-bar-container {
+          width: 100%;
+          background-color: rgba(255, 255, 255, 0.1);
+          border-radius: 8px;
+          overflow: hidden;
+          height: 8px;
+        }
+        .progress-bar {
+          width: 50%;
+          height: 8px;
+          background-color: #06b6d4;
+          animation: loading 1s infinite alternate;
+        }
+        @keyframes loading {
+          0% {
+            width: 20%;
+          }
+          100% {
+            width: 90%;
+          }
+        }
+      `}</style>
     </div>
   );
 }

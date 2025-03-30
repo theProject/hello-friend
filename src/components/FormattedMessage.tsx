@@ -13,7 +13,7 @@ interface FormattedMessageProps {
   glassStyle?: string;
   messageStyle?: string;
   isLatestAIMessage?: boolean;
-  isLoading?: boolean;
+  // Removed isLoading as it's not being used
 }
 
 interface MarkdownComponentProps {
@@ -34,10 +34,9 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
   imageUrl,
   imageAlt,
   onImageClick,
-  glassStyle = 'glass-base-light',
-  messageStyle = 'glass-message-light',
+  glassStyle = 'bg-white',
+  messageStyle = 'bg-white',
   isLatestAIMessage = false,
-  isLoading = false,
 }) => {
   const messageRef = useRef<HTMLDivElement>(null);
 
@@ -90,16 +89,14 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
   return (
     <div
       ref={messageRef}
-      className={`mb-4 backdrop-blur-lg rounded-2xl transform transition-all duration-300
-      ${isUser ? 'ml-auto' : 'mr-auto'} max-w-[80%] 
-      ${isUser
-        ? `${messageStyle} rounded-tr-none hover:-translate-y-1 hover:-rotate-1`
-        : `${messageStyle} rounded-tl-none hover:-translate-y-1 hover:rotate-1`
-      }
-      ${!isUser && isLatestAIMessage && !isLoading ? 'glow-border' : ''}
-      animate-fade-scale`}
+      className={`flex ${isUser ? 'justify-end' : 'justify-start'}`}
     >
-      <div className="p-4">
+      <div 
+        className={`max-w-xs sm:max-w-md md:max-w-lg p-4 rounded-2xl relative ${
+          messageStyle
+        } ${isUser && 'bg-gradient-to-br from-cyan-500 to-blue-600 text-white'} 
+        ${!isUser && 'ai-message-glow'}`}
+      >
         <ReactMarkdown
           remarkPlugins={[remarkGfm]}
           components={components}
@@ -110,8 +107,7 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
 
         {imageUrl && (
           <div
-            className={`relative mt-4 w-full overflow-hidden rounded-xl cursor-pointer
-              ${glassStyle} p-2 transform transition-all duration-300 hover:scale-[1.02]`}
+            className="mt-2 cursor-pointer"
             onClick={() => onImageClick && onImageClick(imageUrl)}
           >
             <div className="relative w-full h-64">
@@ -124,6 +120,10 @@ const FormattedMessage: React.FC<FormattedMessageProps> = ({
               />
             </div>
           </div>
+        )}
+
+        {isUser && (
+          <div className="absolute inset-0 rounded-2xl bg-cyan-500 animate-pulse opacity-10 pointer-events-none"></div>
         )}
       </div>
     </div>

@@ -54,8 +54,7 @@ function createMessage(content: string, role: 'user' | 'assistant'): Message {
 }
 
 /**
- * Let's define a custom type guard for an AbortError.
- * It's recognized if it's a DOMException named 'AbortError'.
+ * Custom type guard for an AbortError.
  */
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === 'AbortError';
@@ -87,7 +86,9 @@ export async function sendPrompt(
       const data = await res.json();
 
       if (!res.ok || !data.imageUrl) {
-        throw new Error('Image generation failed.');
+        // Use detailed error info from the API if available
+        const detailedError = data.details || data.error || 'Image generation failed.';
+        throw new Error(detailedError);
       }
 
       finalMessage = createMessage(`Generated image for: "${prompt}"`, 'assistant');
@@ -107,7 +108,8 @@ export async function sendPrompt(
       const data = await res.json();
 
       if (!res.ok || !data.response) {
-        throw new Error('Chat response failed.');
+        const detailedError = data.details || data.error || 'Chat response failed.';
+        throw new Error(detailedError);
       }
 
       finalMessage = createMessage(data.response, 'assistant');
@@ -128,7 +130,12 @@ export async function sendPrompt(
       finalMessage = createMessage('Request was aborted by the user.', 'assistant');
     } else {
       blocked = true;
-      finalMessage = createMessage('Something went wrong. Please try again.', 'assistant');
+      let errorDetails = 'Something went wrong. Please try again.';
+      if (err instanceof Error) {
+        errorDetails = err.message;
+      }
+      // Return the error details in the message content.
+      finalMessage = createMessage(`Error: ${errorDetails}`, 'assistant');
     }
   } finally {
     if (setIsLoading) setIsLoading(false);
