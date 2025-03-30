@@ -1,6 +1,9 @@
+'use client'
+
 import { Inter } from 'next/font/google'
 import { Analytics } from "@vercel/analytics/react"
 import './globals.css'
+import { useEffect } from 'react'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -14,9 +17,20 @@ export default function RootLayout({
 }: { 
   children: React.ReactNode 
 }) {
+  useEffect(() => {
+    if (
+      typeof window !== 'undefined' &&
+      window.location.hash.includes('debug')
+    ) {
+      const script = document.createElement('script')
+      script.src = 'https://cdn.jsdelivr.net/npm/eruda'
+      script.onload = () => (window as any).eruda.init()
+      document.body.appendChild(script)
+    }
+  }, [])
+
   return (
     <html lang="en">
-      {/* You can apply the Inter font class to the <body> to style all text */}
       <body className={inter.className}>
         {children}
         <Analytics />
