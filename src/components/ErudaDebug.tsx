@@ -10,7 +10,9 @@ export default function ErudaDebug() {
     ) {
       const script = document.createElement('script')
       script.src = 'https://cdn.jsdelivr.net/npm/eruda'
-      script.onload = () => (window as any).eruda.init()
+      script.onload = () => {
+        ;(window as typeof window & { eruda: { init: () => void } }).eruda.init()
+      }
       document.body.appendChild(script)
     }
   }, [])
