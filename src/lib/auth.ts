@@ -1,5 +1,5 @@
-import type { NextAuthOptions } from "next-auth"
-import GoogleProvider from "next-auth/providers/google"
+import type { NextAuthOptions } from "next-auth";
+import GoogleProvider from "next-auth/providers/google";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -12,9 +12,13 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.sub!
+        session.user.id = token.sub!;
       }
-      return session
+      return session;
     },
+    async redirect({ url, baseUrl }) {
+      // Ensure that the URL is on the same site.
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    }
   },
-}
+};

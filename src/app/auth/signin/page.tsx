@@ -1,10 +1,10 @@
 "use client";
 
 import React, { useState, ChangeEvent, FormEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Brain, Clock, Heart, Share2 } from 'lucide-react';
 import { signIn } from "next-auth/react";
 import RandomSVGElements from "../../../components/RandomSVGElements"; //Whack Path - thanks Hydration
-
 
 interface FormData {
   email: string;
@@ -24,6 +24,10 @@ const HelloFriendLanding: React.FC = () => {
   });
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>('');
+
+  // Get the callbackUrl from the search params, or default to "/"
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
 
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
     const { name, value, type } = e.target;
@@ -232,7 +236,7 @@ const HelloFriendLanding: React.FC = () => {
               
               <div className="mt-8 flex justify-center">
                 <button 
-                  onClick={() => signIn("google")}
+                  onClick={() => signIn("google", { callbackUrl })}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition hover:scale-105 flex items-center"
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
@@ -246,14 +250,16 @@ const HelloFriendLanding: React.FC = () => {
               </div>
             </div>
             
-            {/* Beta Access Form with hover effect and new reason field */}
+            {/* Beta Access Form with info fields - needs logic */}
             <div className="bg-black bg-opacity-60 backdrop-blur-md rounded-xl p-6 border border-blue-500/20 shadow-xl hover:shadow-blue-500/20 hover:shadow-lg transition-all duration-300">
               {!submitted ? (
                 <>
                   <h2 className="text-2xl font-bold mb-6 text-center text-white">Request Beta Access</h2>
                   <form onSubmit={handleSubmit} className="space-y-4">
                     <div>
-                      <label htmlFor="email" className="block text-sm font-medium text-blue-300 mb-1">Email <span className="text-red-400">*</span></label>
+                      <label htmlFor="email" className="block text-sm font-medium text-blue-300 mb-1">
+                        Email <span className="text-red-400">*</span>
+                      </label>
                       <input 
                         type="email" 
                         id="email" 

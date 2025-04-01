@@ -27,6 +27,7 @@ import { imageCache } from "@/utils/imageCache";
 import { saveToDevice } from "@/utils/imageUtils";
 import { sendPrompt } from "@/utils/sendPrompt";
 import type { Message, UploadedFile, FileResponse } from "@/types";
+import { signOut } from "next-auth/react";
 
 
 /** Type guard for 'AbortError' */
@@ -655,14 +656,18 @@ export default function FrostScript() {
                     API Keys
                   </a>
                   <a
-                    href="#"
-                    className={`block px-4 py-2 text-sm ${
-                      darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
-                    }`}
-                    role="menuitem"
-                  >
-                    Logout
-                  </a>
+  href="#"
+  onClick={(e) => {
+    e.preventDefault();
+    signOut();
+  }}
+  className={`block px-4 py-2 text-sm ${
+    darkMode ? "hover:bg-gray-700" : "hover:bg-gray-100"
+  }`}
+  role="menuitem"
+>
+  Logout
+</a>
                 </div>
               </div>
             )}
