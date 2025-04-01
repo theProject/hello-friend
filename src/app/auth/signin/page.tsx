@@ -3,6 +3,8 @@
 import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { Brain, Clock, Heart, Share2 } from 'lucide-react';
 import { signIn } from "next-auth/react";
+import RandomSVGElements from "../../../components/RandomSVGElements"; //Whack Path - thanks Hydration
+
 
 interface FormData {
   email: string;
@@ -22,68 +24,48 @@ const HelloFriendLanding: React.FC = () => {
   });
   const [submitted, setSubmitted] = useState<boolean>(false);
   const [formError, setFormError] = useState<string>('');
-  
+
   const handleChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>): void => {
     const { name, value, type } = e.target;
     const checked = (e.target as HTMLInputElement).checked;
-    
+
     setFormData(prevData => ({
       ...prevData,
       [name]: type === 'checkbox' ? checked : value
     }));
-    
+
     // Clear error when user types in email field
     if (name === 'email') {
       setFormError('');
     }
   };
-  
+
   const validateEmail = (email: string): boolean => {
     const re = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
     return re.test(String(email).toLowerCase());
   };
-  
+
   const handleSubmit = (e: FormEvent<HTMLFormElement>): void => {
     e.preventDefault();
-    
+
     // Validate email
     if (!validateEmail(formData.email)) {
       setFormError('Please enter a valid email address');
       return;
     }
-    
+
     // In a real implementation, this would send the form data to your server
     sendFormDataToEmail(formData);
-    
+
     console.log('Form submitted:', formData);
     setSubmitted(true);
   };
-  
+
   const sendFormDataToEmail = (data: FormData): void => {
-    // This is where you would implement the actual email sending logic
-    // Example using a hypothetical API endpoint:
-    
-    /*
-    fetch('https://api.yourdomain.com/submit-beta-form', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(data),
-    })
-    .then(response => response.json())
-    .then(result => {
-      console.log('Email sent successfully', result);
-    })
-    .catch(error => {
-      console.error('Error sending email:', error);
-    });
-    */
-    
     // For now, we'll just log the data
     console.log('Would send email with this data:', data);
   };
-  
+
   // Add the CSS animations for the glowing borders
   const pulseAnimations = `
     @keyframes glowBluePulse {
@@ -173,32 +155,8 @@ const HelloFriendLanding: React.FC = () => {
           <circle cx="50" cy="50" r="15" fill="none" stroke="#0c4a6e" strokeWidth="0.2" />
           <polygon points="50,10 90,50 50,90 10,50" fill="none" stroke="#0f766e" strokeWidth="0.15" />
           
-          {/* Additional connection points */}
-          {[...Array(30)].map((_, i) => (
-            <React.Fragment key={i}>
-              <circle 
-                cx={Math.random() * 100} 
-                cy={Math.random() * 100} 
-                r="0.5" 
-                fill="#fff" 
-                opacity="0.5"
-              />
-            </React.Fragment>
-          ))}
-          
-          {/* Additional connection lines */}
-          {[...Array(40)].map((_, i) => (
-            <line 
-              key={`line-${i}`}
-              x1={Math.random() * 100} 
-              y1={Math.random() * 100}
-              x2={Math.random() * 100} 
-              y2={Math.random() * 100}
-              stroke="#0c4a6e" 
-              strokeWidth="0.1"
-              opacity="0.3"
-            />
-          ))}
+          {/* Use the RandomSVGElements component to render random circles and lines after client mount */}
+          <RandomSVGElements />
         </svg>
         
         {/* Particle dust effect overlay */}
@@ -241,7 +199,7 @@ const HelloFriendLanding: React.FC = () => {
                     <Brain size={24} className="text-blue-300 group-hover:text-blue-100" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">Memory That Scales</h3>
-                  <p className="text-sm text-gray-300 group-hover:text-white">Our breakthrough in long-term AI memory grows with you throughout your life</p>
+                  <p className="text-sm text-gray-300 group-hover:text-white">A friend remembers everything, as they grow alongside you. Your daily moments, conversations, everything - preserved securely, for you and your friend. Not some advertiser.  We believe your data belongs to you, along with its value - here you capture it for yourself, complete control.</p>
                 </div>
                 
                 <div className="bg-black bg-opacity-50 backdrop-blur-sm p-5 rounded-xl border border-purple-500/30 shadow-lg flex flex-col items-center text-center transform transition-all duration-200 hover:scale-105 hover:shadow-purple-500/50 hover:shadow-lg relative group">
@@ -249,8 +207,8 @@ const HelloFriendLanding: React.FC = () => {
                   <div className="w-12 h-12 rounded-full bg-purple-500/20 flex items-center justify-center mb-3 group-hover:bg-purple-500/40 transition-all">
                     <Clock size={24} className="text-purple-300 group-hover:text-purple-100" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">Nightly Recollection</h3>
-                  <p className="text-sm text-gray-300 group-hover:text-white">Deep learning process that contemplates your conversations while you sleep</p>
+                  <h3 className="text-lg font-bold text-white mb-2">A Friend Reflects</h3>
+                  <p className="text-sm text-gray-300 group-hover:text-white">Using our breakthrough Deep Reflection process, set your bedtime, and your friend performs magic. Adding more to an earlier conversation, connecting your daily insights with your past. Discover patterns and gain deeper understanding, just like a lifelong friend.</p>
                 </div>
                 
                 <div className="bg-black bg-opacity-50 backdrop-blur-sm p-5 rounded-xl border border-pink-500/30 shadow-lg flex flex-col items-center text-center transform transition-all duration-200 hover:scale-105 hover:shadow-pink-500/50 hover:shadow-lg relative group">
@@ -258,8 +216,8 @@ const HelloFriendLanding: React.FC = () => {
                   <div className="w-12 h-12 rounded-full bg-pink-500/20 flex items-center justify-center mb-3 group-hover:bg-pink-500/40 transition-all">
                     <Heart size={24} className="text-pink-300 group-hover:text-pink-100" />
                   </div>
-                  <h3 className="text-lg font-bold text-white mb-2">True Companion</h3>
-                  <p className="text-sm text-gray-300 group-hover:text-white">More than an assistant, a friend that knows you and grows with you</p>
+                  <h3 className="text-lg font-bold text-white mb-2">A Powerful Companion</h3>
+                  <p className="text-sm text-gray-300 group-hover:text-white">More than an assistant, your trusted companion. All the AI power tools you expect - sparking creativity, solving problems and creating gorgeous art and video... but the edge? Your friend knows you better than any AI cares to.</p>
                 </div>
                 
                 <div className="bg-black bg-opacity-50 backdrop-blur-sm p-5 rounded-xl border border-teal-500/30 shadow-lg flex flex-col items-center text-center transform transition-all duration-200 hover:scale-105 hover:shadow-teal-500/50 hover:shadow-lg relative group">
@@ -268,7 +226,7 @@ const HelloFriendLanding: React.FC = () => {
                     <Share2 size={24} className="text-teal-300 group-hover:text-teal-100" />
                   </div>
                   <h3 className="text-lg font-bold text-white mb-2">New Insights</h3>
-                  <p className="text-sm text-gray-300 group-hover:text-white">Offers follow-ups when you return with new connections and ideas</p>
+                  <p className="text-sm text-gray-300 group-hover:text-white">Wake up with clarity. Each night, your friend reflects on the day — uncovering deeper insights, missed moments, and connections to your past that bring new meaning each morning.  The power of Deep Reflection will stun you.</p>
                 </div>
               </div>
               
