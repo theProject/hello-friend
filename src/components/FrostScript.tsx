@@ -28,6 +28,7 @@ import { saveToDevice } from "@/utils/imageUtils";
 import { sendPrompt } from "@/utils/sendPrompt";
 import type { Message, UploadedFile, FileResponse } from "@/types";
 
+
 /** Type guard for 'AbortError' */
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === "AbortError";
@@ -394,11 +395,7 @@ export default function FrostScript() {
   // ---------------------------------
   const Logo = () => (
     <div className="flex items-center space-x-2">
-      <div
-        className={`relative w-8 h-8 flex items-center justify-center rounded-full ${
-          darkMode ? "bg-gray-800" : "bg-gray-100"
-        }`}
-      >
+      <div className={`relative w-8 h-8 flex items-center justify-center rounded-full ${darkMode ? 'bg-gray-800' : 'bg-gray-100'}`}>
         <svg viewBox="0 0 40 40" className="w-7 h-7">
           <defs>
             <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
@@ -407,48 +404,25 @@ export default function FrostScript() {
             </linearGradient>
           </defs>
           <g>
+            {/* Connected abstract nodes design */}
             <circle cx="15" cy="15" r="5" fill="url(#logoGradient)" />
             <circle cx="25" cy="25" r="5" fill="url(#logoGradient)" />
             <circle cx="25" cy="10" r="3" fill="url(#logoGradient)" />
             <circle cx="10" cy="25" r="3" fill="url(#logoGradient)" />
-            <line
-              x1="15"
-              y1="15"
-              x2="25"
-              y2="25"
-              stroke="url(#logoGradient)"
-              strokeWidth="1.5"
-            />
-            <line
-              x1="15"
-              y1="15"
-              x2="25"
-              y2="10"
-              stroke="url(#logoGradient)"
-              strokeWidth="1.5"
-            />
-            <line
-              x1="25"
-              y1="25"
-              x2="10"
-              y2="25"
-              stroke="url(#logoGradient)"
-              strokeWidth="1.5"
-            />
+            
+            {/* Connection lines */}
+            <line x1="15" y1="15" x2="25" y2="25" stroke="url(#logoGradient)" strokeWidth="1.5" />
+            <line x1="15" y1="15" x2="25" y2="10" stroke="url(#logoGradient)" strokeWidth="1.5" />
+            <line x1="25" y1="25" x2="10" y2="25" stroke="url(#logoGradient)" strokeWidth="1.5" />
           </g>
         </svg>
         <div className="absolute inset-0 rounded-full bg-cyan-500 animate-logo-pulse opacity-20"></div>
       </div>
-      <span
-        className={`font-semibold text-lg ${
-          darkMode ? "text-white" : "text-gray-800"
-        }`}
-      >
+      <span className={`font-semibold text-lg ${darkMode ? 'text-white' : 'text-gray-800'}`}>
         hello, friend
       </span>
     </div>
   );
-
   // ---------------------------------
   // Render
   // ---------------------------------
@@ -472,7 +446,7 @@ export default function FrostScript() {
           >
             <Menu size={20} />
           </button>
-          <Logo />
+          <Logo /> 
         </div>
 
         <div className="flex items-center space-x-3">

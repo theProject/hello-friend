@@ -25,6 +25,7 @@
     "mongodb": "^6.12.0",
     "motion": "^12.4.2",
     "next": "^15.1.6",
+    "next-auth": "^4.24.11",
     "pdf-parse": "^1.1.1",
     "prism-react-renderer": "^2.4.1",
     "react": "^19.0.0",

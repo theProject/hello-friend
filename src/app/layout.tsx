@@ -1,7 +1,8 @@
 import { Inter } from 'next/font/google'
 import { Analytics } from "@vercel/analytics/react"
 import './globals.css'
-import ErudaDebug from '../components/ErudaDebug' // <-- Add this line
+import ErudaDebug from '../components/ErudaDebug'
+import Providers from './Providers' // <-- Added Providers import
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -18,8 +19,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={inter.className}>
-        <ErudaDebug /> {/* <-- Inject here */}
-        {children}
+        <Providers>
+          <ErudaDebug />
+          {children}
+        </Providers>
         <Analytics />
       </body>
     </html>
