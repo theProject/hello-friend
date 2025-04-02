@@ -45,6 +45,7 @@ export async function middleware(request: NextRequest) {
   if (!token) {
     console.warn('No token found, redirecting to sign-in');
     const signInUrl = new URL('/auth/signin', request.url);
+    signInUrl.searchParams.set('callbackUrl', request.nextUrl.pathname);
     return NextResponse.redirect(signInUrl);
   }
 
@@ -54,5 +55,5 @@ export async function middleware(request: NextRequest) {
 
 // Apply middleware to all routes except static assets.
 export const config = {
-  matcher: ['/((?!_next|favicon.ico).*)'],
+  matcher: ['/', '/((?!api|_next|favicon.ico|auth).*)'],
 };
