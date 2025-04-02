@@ -1,3 +1,4 @@
+// next.config.ts
 import type { NextConfig } from 'next';
 
 const config: NextConfig = {
@@ -6,16 +7,7 @@ const config: NextConfig = {
   },
   images: {
     remotePatterns: [
-      {
-        protocol: 'https',
-        hostname: 'dalleproduse.blob.core.windows.net',
-        pathname: '/**',
-      },
-      {
-        protocol: 'https',
-        hostname: 'featherblob.blob.core.windows.net',
-        pathname: '/**',
-      },
+      // ...
     ],
   },
   webpack: (config, { isServer }) => {
@@ -29,16 +21,9 @@ const config: NextConfig = {
     }
     return config;
   },
-  async redirects() {
-    return [
-      {
-        source: '/',
-        destination: '/auth/signin',
-        permanent: false,
-      },
-    ];
-  },
+  // async block caused this whole nextauth mess
 };
 
 export default config;
+
 

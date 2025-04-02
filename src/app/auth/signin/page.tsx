@@ -8,3 +8,4 @@ export default function SignInPage() {
     </Suspense>
   );
 }
+// This file is the entry point for the sign-in page in this bloodyNext.js application.

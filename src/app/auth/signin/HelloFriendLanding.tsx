@@ -221,7 +221,7 @@ const HelloFriendLanding: React.FC = () => {
               
               <div className="mt-8 flex justify-center">
                 <button 
-                  onClick={() => signIn("google", { callbackUrl })}
+                  onClick={() => signIn("google", { callbackUrl})}
                   className="bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-bold py-3 px-6 rounded-lg shadow-lg transform transition hover:scale-105 flex items-center"
                 >
                   <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
