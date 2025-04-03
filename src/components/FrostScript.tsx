@@ -29,6 +29,7 @@ import type { Message, UploadedFile, FileResponse } from "@/types";
 import { signOut } from "next-auth/react";
 
 
+
 /** Type guard for 'AbortError' */
 function isAbortError(err: unknown): boolean {
   return err instanceof DOMException && err.name === "AbortError";
