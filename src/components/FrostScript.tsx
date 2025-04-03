@@ -16,7 +16,6 @@ import {
   Code,
   BrainCircuit,
   Layers,
- // History,
   MessageSquare
 } from "lucide-react";
 import * as sdk from "microsoft-cognitiveservices-speech-sdk";
