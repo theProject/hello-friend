@@ -11,6 +11,7 @@ jobs:
       - name: Apply Grok Changes
         run: |
           echo "Manual step: Copy Grok’s code from comment into files"
+          echo "Grok was here $(date)" > grok-test.txt  # Dummy file with timestamp
       - name: Commit Changes
         uses: stefanzweifel/git-auto-commit-action@v4
         with:
