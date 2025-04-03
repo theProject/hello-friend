@@ -13,6 +13,7 @@
     "@azure/ai-form-recognizer": "^5.0.0",
     "@azure/cosmos": "^4.2.0",
     "@azure/storage-blob": "^12.26.0",
+    "@geist-ui/core": "^2.3.8",
     "@vercel/analytics": "^1.4.1",
     "@vercel/speed-insights": "^1.2.0",
     "autoprefixer": "^10.4.20",

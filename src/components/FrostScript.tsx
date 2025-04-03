@@ -27,7 +27,7 @@ import { saveToDevice } from "@/utils/imageUtils";
 import { sendPrompt } from "@/utils/sendPrompt";
 import type { Message, UploadedFile, FileResponse } from "@/types";
 import { signOut } from "next-auth/react";
-
+import { Test } from './Test';
 
 /** Type guard for 'AbortError' */
 function isAbortError(err: unknown): boolean {
@@ -827,6 +827,7 @@ export default function FrostScript() {
           </div>
 
           {/* Chat Area */}
+          <Test />
           <div className="flex-1 flex flex-col overflow-hidden w-full">
             <div
               ref={chatContainerRef}
