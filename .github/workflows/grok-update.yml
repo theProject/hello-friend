@@ -10,6 +10,11 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v3
+      - name: Pull grok-edits
+        run: |
+          git fetch origin grok-edits
+          git checkout grok-edits
+          git pull origin grok-edits --rebase || true  # Pull, ignore if branch is new
       - name: Apply Grok Changes
         run: |
           echo "Manual step: Copy Grok’s code from comment into files"
@@ -19,4 +24,4 @@ jobs:
         with:
           commit_message: "Grok’s updates"
           branch: grok-edits
-          create_branch: true 
+          create_branch: true
