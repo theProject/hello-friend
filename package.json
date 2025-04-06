@@ -1,6 +1,6 @@
 {
-  "name": "frostscript",
-  "version": "0.6.0",
+  "name": "hello-friend",
+  "version": "0.7.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
