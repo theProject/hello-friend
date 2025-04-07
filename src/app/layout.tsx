@@ -1,33 +1,20 @@
-import { Inter } from 'next/font/google'
-import { Analytics } from "@vercel/analytics/react"
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import './globals.css'
-import ErudaDebug from '../components/ErudaDebug'
-import Providers from './Providers' // <-- Added Providers import
+// src/app/layout.tsx
+import { GeistSans } from '@vercel/geist/font/sans';
+import { Metadata } from 'next';
+import { SessionProvider } from 'next-auth/react';
+import { authOptions } from '../../lib/authOptions';
 
-const inter = Inter({ subsets: ['latin'] })
+export const metadata: Metadata = {
+  title: 'Hello, Friend',
+  description: 'Your second consciousness—chat, remember, disrupt.',
+};
 
-export const metadata = {
-  title: 'Hello Friend',
-  description: 'AI as a friend, not a service',
-}
-console.log('Root layout rendered on the server');
-
-export default function RootLayout({ 
-  children 
-}: { 
-  children: React.ReactNode 
-}) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
-      <body className={inter.className}>
-        <Providers>
-          <ErudaDebug />
-          {children}
-        </Providers>
-        <Analytics />
-        <SpeedInsights />
+    <html lang="en" className={GeistSans.className}>
+      <body className="bg-gray-1000 dark:bg-gray-1100 text-white">
+        <SessionProvider>{children}</SessionProvider>
       </body>
     </html>
-  )
+  );
 }

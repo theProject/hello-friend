@@ -1,24 +1,35 @@
-import type { Config } from 'tailwindcss'
+// tailwind.config.js
+const colors = require('tailwindcss/colors');
 
-const config: Config = {
-  darkMode: 'class', // Enable dark mode via a class on the root element (e.g., <html class="dark">)
-  content: [
-    './src/pages/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/components/**/*.{js,ts,jsx,tsx,mdx}',
-    './src/app/**/*.{js,ts,jsx,tsx,mdx}',
-  ],
+module.exports = {
+  content: ['./src/app/**/*.{js,ts,jsx,tsx,mdx}', './src/components/**/*.{js,ts,jsx,tsx,mdx}'], // Updated for src/
+  darkMode: 'class',
   theme: {
     extend: {
-      // Remove neumorphic colors and shadows.
-      // If desired, you can add custom glass or gradient colors here.
-      // For example:
-      // colors: {
-      //   'glass-light': 'rgba(255, 255, 255, 0.3)',
-      //   'glass-dark': 'rgba(31,41,55,0.25)',
-      // },
+      colors: {
+        gray: colors.zinc,
+        'gray-1000': 'rgb(17,17,19)',
+        'gray-1100': 'rgb(10,10,11)',
+        vercel: {
+          pink: '#FF0080',
+          blue: '#0070F3',
+          cyan: '#50E3C2',
+          orange: '#F5A623',
+          violet: '#7928CA',
+        },
+      },
+      backgroundImage: ({ theme }) => ({
+        'vc-border-gradient': `radial-gradient(at left top, ${theme('colors.gray.500')}, 50px, ${theme('colors.gray.800')} 50%)`,
+      }),
+      keyframes: ({ theme }) => ({
+        shimmer: {
+          '100%': { transform: 'translateX(100%)' },
+        },
+      }),
+      animation: {
+        shimmer: 'shimmer 2s infinite',
+      },
     },
   },
-  plugins: [],
-}
-
-export default config;
+  plugins: [require('@tailwindcss/typography'), require('@tailwindcss/forms')],
+};

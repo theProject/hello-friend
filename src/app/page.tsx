@@ -1,15 +1,12 @@
-import FrostScript from '@/components/FrostScript'
-import { Metadata } from 'next'
+// src/app/page.tsx
+import { getServerSession } from 'next-auth';
+import { redirect } from 'next/navigation';
+import { authOptions } from '../../lib/authOptions';
 
-export const metadata: Metadata = {
-  title: 'FrostScript',
-  description: 'AI that freezes time.',
-}
-
-export default function Home() {
-  return (
-    <main className="min-h-screen w-full">
-      <FrostScript />
-    </main>
-  )
+export default async function Home() {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    redirect('/auth/signin');
+  }
+  redirect('/chat');
 }
